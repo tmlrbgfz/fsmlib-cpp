@@ -7,7 +7,7 @@
 
 FsmLabel::FsmLabel(const int input,
                    const int output,
-                   const std::shared_ptr<FsmPresentationLayer> presentationLayer)
+                   const FsmPresentationLayer *presentationLayer)
 	: input(input), output(output), presentationLayer(presentationLayer)
 {
 

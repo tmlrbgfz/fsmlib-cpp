@@ -25,27 +25,21 @@ FsmPresentationLayer::FsmPresentationLayer(const std::vector<std::string>& in2St
 
 }
 
-FsmPresentationLayer::FsmPresentationLayer(const std::string& inputs, const std::string& outputs, const std::string& states)
+FsmPresentationLayer::FsmPresentationLayer(std::istream& inputs, std::istream& outputs, std::istream& states)
 {
 	std::string line;
 
-	std::ifstream inputsFile(inputs);
-	while (getline(inputsFile, line))
+	while (std::getline(inputs, line))
 	{
 		in2String.push_back(line);
 	}
-	inputsFile.close();
 
-
-	std::ifstream outputsFile(outputs);
-	while (getline(outputsFile, line))
+	while (std::getline(outputs, line))
 	{
 		out2String.push_back(line);
 	}
-	outputsFile.close();
 
-	std::ifstream statesFile(states);
-	while (getline(statesFile, line))
+	while (std::getline(states, line))
 	{
 		state2String.push_back(line);
 	}
@@ -131,8 +125,7 @@ void FsmPresentationLayer::dumpState(std::ostream & out) const
 	}
 }
 
-bool FsmPresentationLayer::compare(std::shared_ptr<FsmPresentationLayer> otherPresentationLayer)
-{
+bool FsmPresentationLayer::compare(FsmPresentationLayer const *otherPresentationLayer) const {
 	if (in2String.size() != otherPresentationLayer->in2String.size())
 	{
 		return false;
@@ -162,42 +155,36 @@ bool FsmPresentationLayer::compare(std::shared_ptr<FsmPresentationLayer> otherPr
 }
 
 
-int FsmPresentationLayer::in2Num(const std::string& name) {
+boost::optional<int> FsmPresentationLayer::in2Num(const std::string& name) const {
     
     for ( size_t i = 0; i < in2String.size(); i++ ) {
-        if ( in2String[i] == name ) return (int)i;
+        if ( in2String[i] == name ) { 
+			return boost::make_optional<int>(i);
+		}
     }
     
-    return -1;
+    return boost::none;
     
 }
 
-int FsmPresentationLayer::out2Num(const std::string& name) {
+boost::optional<int> FsmPresentationLayer::out2Num(const std::string& name) const {
     
     for ( size_t i = 0; i < out2String.size(); i++ ) {
-        if ( out2String[i] == name ) return (int)i;
+        if ( out2String[i] == name ) {
+			return boost::make_optional<int>(i);
+		}
     }
     
-    return -1;
+    return boost::none;
 }
 
-int FsmPresentationLayer::state2Num(const std::string& name) {
+boost::optional<int> FsmPresentationLayer::state2Num(const std::string& name) const {
     
     for ( size_t i = 0; i < state2String.size(); i++ ) {
-        if ( state2String[i] == name ) return (int)i;
+        if ( state2String[i] == name ) {
+			return boost::make_optional<int>(i);
+		}
     }
     
-    return -1;
+    return boost::none;
 }
-
-
-
-
-
-
-
-
-
-
-
-

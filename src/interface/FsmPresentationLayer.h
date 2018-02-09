@@ -7,12 +7,10 @@
 #ifndef FSM_INTERFACE_FSMPRESENTATIONLAYER_H_
 #define FSM_INTERFACE_FSMPRESENTATIONLAYER_H_
 
-#include <fstream>
-#include <iostream>
-#include <memory>
-#include <sstream>
+#include <istream>
 #include <string>
 #include <vector>
+#include <boost/optional/optional.hpp>
 
 class FsmPresentationLayer
 {
@@ -54,13 +52,13 @@ public:
 
 	/**
 	 * Create a new presentation layer
-	 * @param inputs A file name, in which each line stand for one input
-	 * @param outputs A file name, in which each line stand for one output
-	 * @param states A file name, in which each line stand for one state
+	 * @param inputs An input stream, in which each line stand for one input
+	 * @param outputs An input stream, in which each line stand for one output
+	 * @param states An input stream, in which each line stand for one state
 	 */
-	FsmPresentationLayer(const std::string & inputs,
-                         const std::string & outputs,
-                         const std::string & states);
+	FsmPresentationLayer(std::istream & inputs,
+                         std::istream & outputs,
+                         std::istream & states);
 
     void addState2String(std::string name);
     void removeState2String(const int index);
@@ -89,34 +87,34 @@ public:
 	std::string getStateId(const unsigned int id, const std::string & prefix) const;
     
     /**
-     *  Get a copy of the in2string vector
+     *  Get a const reference of the in2string vector
      */
-    std::vector<std::string> getIn2String() { return in2String; }
+    std::vector<std::string> const & getIn2String() const { return in2String; }
     
     /**
-     *  Get a copy of the out2string vector
+     *  Get a const reference of the out2string vector
      */
-    std::vector<std::string> getOut2String() { return out2String; }
+    std::vector<std::string> const & getOut2String() const { return out2String; }
     
     /**
-     *  Get a copy of the state2string vector
+     *  Get a const reference of the state2string vector
      */
-    std::vector<std::string> getState2String() { return state2String; }
+    std::vector<std::string> const & getState2String() const { return state2String; }
     
     /**
      *  Convert input name to input number
      */
-     int in2Num(const std::string& name);
+    boost::optional<int> in2Num(const std::string& name) const;
     
     /**
      *  Convert output name to output number
      */
-     int out2Num(const std::string& name);
+    boost::optional<int> out2Num(const std::string& name) const;
     
     /**
      *  Convert state name to state number
      */
-     int state2Num(const std::string& name);
+    boost::optional<int> state2Num(const std::string& name) const;
 
 	/**
 	 * Dump the current inputs into an output stream
@@ -140,6 +138,6 @@ public:
 	 * Compare two presentation layer to check if they are the same or not
 	 * @param otherPresentationLayer The other presentation layer to be compared
 	 */
-	bool compare(std::shared_ptr<FsmPresentationLayer> otherPresentationLayer);
+	bool compare(FsmPresentationLayer const *otherPresentationLayer) const;
 };
 #endif //FSM_INTERFACE_FSMPRESENTATIONLAYER_H_

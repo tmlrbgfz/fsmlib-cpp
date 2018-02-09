@@ -126,7 +126,7 @@ void Fsm::parseLine(const string & line)
     }
     
     shared_ptr<FsmLabel> theLabel =
-    make_shared<FsmLabel>(input, output, presentationLayer);
+    make_shared<FsmLabel>(input, output, presentationLayer.get());
     currentParsedNode->addTransition(make_shared<FsmTransition>(currentParsedNode,
                                                                 nodes[target],
                                                                 theLabel));
@@ -702,7 +702,7 @@ Fsm Fsm::transformToObservableFSM() const
             {
                 // This is the transition label currently processed
                 shared_ptr<FsmLabel> lbl =
-                make_shared<FsmLabel>(x, y, obsPl);
+                make_shared<FsmLabel>(x, y, obsPl.get());
                 
                 // Clear the set of node labels that may
                 // serve as node name for the target node to be
@@ -1472,7 +1472,7 @@ Fsm::createRandomFsm(const string & fsmName,
             y0 = rand() % (maxOutput+1);
             auto theTrans =
             make_shared<FsmTransition>(srcNode,whiteNode,
-                                       make_shared<FsmLabel>(x0,y0,pl));
+                                       make_shared<FsmLabel>(x0,y0,pl.get()));
             // Add transition to adjacency list of the source node
             srcNode->addTransition(theTrans);
             thisNode->setColor(FsmNode::black);
@@ -1503,7 +1503,7 @@ Fsm::createRandomFsm(const string & fsmName,
                 }
                 auto theTrans =
                 make_shared<FsmTransition>(srcNode,tgtNode,
-                                           make_shared<FsmLabel>(x,y,pl));
+                                           make_shared<FsmLabel>(x,y,pl.get()));
                 // Add transition to adjacency list of the source node
                 srcNode->addTransition(theTrans);
             }
@@ -1595,9 +1595,8 @@ shared_ptr<Fsm> Fsm::createMutant(const std::string & fsmName,
         if ( newOutValOk ) {
             
             auto newLbl = make_shared<FsmLabel>(tr->getLabel()->getInput(),
-                                                
                                                 newOutVal,
-                                                presentationLayer);
+                                                presentationLayer.get());
             
             tr->setLabel(newLbl);
         }

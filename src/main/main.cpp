@@ -7,7 +7,7 @@
 #include <iostream>
 #include <fstream>
 #include <memory>
-#include <stdlib.h>
+//#include <stdlib.h>
 #include <interface/FsmPresentationLayer.h>
 #include <fsm/Dfsm.h>
 #include <fsm/Fsm.h>
@@ -32,6 +32,7 @@ void assertInconclusive(string tc, string comment = "") {
     
 }
 
+#undef assert
 void assert(string tc, bool verdict, string comment = "") {
     
     string sVerdict = (verdict) ? "PASS" : "FAIL";
@@ -386,11 +387,14 @@ void test7() {
     
     //    cout << "TC-FSM-0007 Check correctness of FSM Simulation Visitor "
     //    << endl;
+    std::ifstream inputFile("../../../resources/garageIn.txt");
+    std::ifstream outputFile("../../../resources/garageOut.txt");
+    std::ifstream stateFile("../../../resources/garageState.txt");
     
     shared_ptr<FsmPresentationLayer> pl =
-    make_shared<FsmPresentationLayer>("../../../resources/garageIn.txt",
-                                      "../../../resources/garageOut.txt",
-                                      "../../../resources/garageState.txt");
+    make_shared<FsmPresentationLayer>(inputFile,
+                                      outputFile,
+                                      stateFile);
     Dfsm d("../../../resources/garage.fsm",pl,"GC");
     d.toDot("GC");
     
@@ -411,11 +415,14 @@ void test8() {
     
     //    cout << "TC-FSM-0008 Check correctness of FSM Oracle Visitor "
     //    << endl;
+    std::ifstream inputFile("../../../resources/garageIn.txt");
+    std::ifstream outputFile("../../../resources/garageOut.txt");
+    std::ifstream stateFile("../../../resources/garageState.txt");
     
     shared_ptr<FsmPresentationLayer> pl =
-    make_shared<FsmPresentationLayer>("../../../resources/garageIn.txt",
-                                      "../../../resources/garageOut.txt",
-                                      "../../../resources/garageState.txt");
+    make_shared<FsmPresentationLayer>(inputFile,
+                                      outputFile,
+                                      stateFile);
     Dfsm d("../../../resources/garage.fsm",pl,"GC");
     d.toDot("GC");
     

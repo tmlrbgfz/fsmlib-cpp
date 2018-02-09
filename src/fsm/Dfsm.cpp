@@ -317,7 +317,7 @@ void Dfsm::createDfsmTransitionGraph(const string& fname) {
             if ( tableEntry.empty() ) {
                 tgtNode = currentParsedNode;
                 shared_ptr<FsmLabel> lbl =
-                make_shared<FsmLabel>(x,0,presentationLayer);
+                make_shared<FsmLabel>(x,0,presentationLayer.get());
                 shared_ptr<FsmTransition> tr =
                 make_shared<FsmTransition>(currentParsedNode,tgtNode,lbl);
                 currentParsedNode->addTransition(tr);
@@ -337,14 +337,14 @@ void Dfsm::createDfsmTransitionGraph(const string& fname) {
                 tgtStateName.erase(0,tgtStateName.find_first_not_of(" \n\r\t\""));
                 tgtStateName.erase(tgtStateName.find_last_not_of(" \n\r\t\"")+1);
                 
-                int tgtStateId = presentationLayer->state2Num(tgtStateName);
-                if ( tgtStateId >= 0 ) {
-                    tgtNode = nodes[tgtStateId];
+                auto tgtStateId = presentationLayer->state2Num(tgtStateName);
+                if ( static_cast<bool>(tgtStateId) ) {
+                    tgtNode = nodes[tgtStateId.value()];
                     if ( tgtNode == nullptr ) {
-                        tgtNode = make_shared<FsmNode>(tgtStateId,
+                        tgtNode = make_shared<FsmNode>(tgtStateId.value(),
                                                        tgtStateName,
                                                        presentationLayer);
-                        nodes[tgtStateId] = tgtNode;
+                        nodes[tgtStateId.value()] = tgtNode;
                     }
                     // Get the output associated with the current state
                     // and input
@@ -353,14 +353,14 @@ void Dfsm::createDfsmTransitionGraph(const string& fname) {
                     outStr.erase(0,outStr.find_first_not_of(" \n\r\t\""));
                     outStr.erase(outStr.find_last_not_of(" \n\r\t\"")+1);
                     
-                    int y =
+                    auto y =
                     ( outStr.empty() )
-                    ? 0
+                    ? boost::none
                     : presentationLayer->out2Num(outStr);
                     
-                    if ( y >= 0 ) {
+                    if ( static_cast<bool>(y) ) {
                         shared_ptr<FsmLabel> lbl =
-                        make_shared<FsmLabel>(x,y,presentationLayer);
+                        make_shared<FsmLabel>(x,y.value(),presentationLayer.get());
                         shared_ptr<FsmTransition> tr =
                         make_shared<FsmTransition>(currentParsedNode,tgtNode,lbl);
                         currentParsedNode->addTransition(tr);
@@ -449,7 +449,7 @@ void Dfsm::createAtRandom()
                                        target,
                                        make_shared<FsmLabel>(input,
                                                              output,
-                                                             presentationLayer));
+                                                             presentationLayer.get()));
             source->addTransition(transition);
         }
     }
@@ -673,9 +673,9 @@ Fsm()
         yString.erase(0,yString.find_first_not_of(" \n\r\t\""));
         yString.erase(yString.find_last_not_of(" \n\r\t\"")+1);
         
-        int y = presentationLayer->out2Num(yString);
+        auto y = presentationLayer->out2Num(yString);
         
-        if ( y < 0 ) {
+        if ( !y ) {
             cerr << "Unidentified output symbol `"
             <<  yString
             << "' in transition "
@@ -693,8 +693,8 @@ Fsm()
             // Trim
             xString.erase(0,xString.find_first_not_of(" \n\r\t\""));
             xString.erase(xString.find_last_not_of(" \n\r\t\"")+1);
-            int x = presentationLayer->in2Num(xString);
-            if ( x < 0 ) {
+            auto x = presentationLayer->in2Num(xString);
+            if ( !x ) {
                 cerr << "Unidentified input symbol `"
                 <<  xString
                 << "' in transition "
@@ -703,7 +703,7 @@ Fsm()
                 exit(1);
             }
             shared_ptr<FsmLabel> theLabel =
-            make_shared<FsmLabel>(x,y,presentationLayer);
+            make_shared<FsmLabel>(x.value(),y.value(),presentationLayer.get());
             shared_ptr<FsmTransition> tr =
             make_shared<FsmTransition>(srcNode,tgtNode,theLabel);
             
@@ -751,7 +751,7 @@ Fsm()
         for ( int x = 0; x <= maxInput; x++ ) {
             if ( not inputs[x] ) {
                 shared_ptr<FsmLabel> theLabel =
-                make_shared<FsmLabel>(x,theNopNo,presentationLayer);
+                make_shared<FsmLabel>(x,theNopNo,presentationLayer.get());
                 shared_ptr<FsmTransition> tr =
                 make_shared<FsmTransition>(n,n,theLabel);
                 n->addTransition(tr);
@@ -836,8 +836,8 @@ Fsm()
     }
     // Check whether the _nop output is already contained in pl,
     // otherwise add it to out2String
-    int theNopNo = pl->out2Num("_nop");
-    if ( theNopNo < 0 ) {
+    auto theNopNo = pl->out2Num("_nop");
+    if ( !theNopNo ) {
         out2String.push_back("_nop");
     }
     
@@ -909,9 +909,9 @@ Fsm()
         yString.erase(0,yString.find_first_not_of(" \n\r\t\""));
         yString.erase(yString.find_last_not_of(" \n\r\t\"")+1);
         
-        int y = presentationLayer->out2Num(yString);
+        auto y = presentationLayer->out2Num(yString);
         
-        if ( y < 0 ) {
+        if ( !y ) {
             cerr << "Unidentified output symbol `"
             <<  yString
             << "' in transition "
@@ -929,8 +929,8 @@ Fsm()
             // Trim
             xString.erase(0,xString.find_first_not_of(" \n\r\t\""));
             xString.erase(xString.find_last_not_of(" \n\r\t\"")+1);
-            int x = presentationLayer->in2Num(xString);
-            if ( x < 0 ) {
+            auto x = presentationLayer->in2Num(xString);
+            if ( !x ) {
                 cerr << "Unidentified input symbol `"
                 <<  xString
                 << "' in transition "
@@ -939,7 +939,7 @@ Fsm()
                 exit(1);
             }
             shared_ptr<FsmLabel> theLabel =
-            make_shared<FsmLabel>(x,y,presentationLayer);
+            make_shared<FsmLabel>(x.value(),y.value(),presentationLayer.get());
             shared_ptr<FsmTransition> tr =
             make_shared<FsmTransition>(srcNode,tgtNode,theLabel);
             
@@ -987,7 +987,7 @@ Fsm()
         for ( int x = 0; x <= maxInput; x++ ) {
             if ( not inputs[x] ) {
                 shared_ptr<FsmLabel> theLabel =
-                make_shared<FsmLabel>(x,theNopNo,presentationLayer);
+                make_shared<FsmLabel>(x,theNopNo.value(),presentationLayer.get());
                 shared_ptr<FsmTransition> tr =
                 make_shared<FsmTransition>(n,n,theLabel);
                 n->addTransition(tr);

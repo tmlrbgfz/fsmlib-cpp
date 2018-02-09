@@ -4,6 +4,7 @@
  * Licensed under the EUPL V.1.1
  */
 #include "fsm/IOTrace.h"
+#include <sstream>
 
 using namespace std;
 

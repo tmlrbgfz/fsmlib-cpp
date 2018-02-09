@@ -27,7 +27,7 @@ private:
 	/**
 	The presentation layer used by this label
 	*/
-	std::shared_ptr<FsmPresentationLayer> presentationLayer;
+	FsmPresentationLayer const *presentationLayer;
 public:
 	/**
 	 * Create a FsmLabel
@@ -38,7 +38,7 @@ public:
 	 */
 	FsmLabel(const int input,
              const int output,
-             const std::shared_ptr<FsmPresentationLayer> presentationLayer);
+             const FsmPresentationLayer *presentationLayer);
     
     /**
      * Copy constructor
@@ -65,13 +65,10 @@ public:
 	*/
 	friend bool operator==(FsmLabel const & label1, FsmLabel const & label2);
 
-    
-    
     /**
      *  Accept an FsmVisitor
      */
     void accept(FsmVisitor& v);
-    
     
 	/**
 	Check wheter or not, label1 is "smaller" than label2. this operator is needed 

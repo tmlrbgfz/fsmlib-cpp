@@ -4,6 +4,7 @@
  * Licensed under the EUPL V.1.1
  */
 #include "trees/OutputTree.h"
+#include <fstream>
 
 using namespace std;
 
@@ -82,7 +83,7 @@ void OutputTree::toDot(ostream& out) const
 	out << "}";
 }
 
-void OutputTree::store(ofstream& file)
+void OutputTree::store(std::ofstream& file)
 {
 	vector<vector<int>> lli = *getIOLists().getIOLists();
 	for (vector<int> lst : lli)
@@ -91,10 +92,10 @@ void OutputTree::store(ofstream& file)
 		{
 			if (i != 0)
 			{
-				file << ".";
+				file << std::string(".");
 			}
 
-			file << "(" << inputTrace.get().at(i) << "," << lst.at(i) <<")";
+			file << std::string("(") << inputTrace.get().at(i) << std::string(",") << lst.at(i) << std::string(")");
 		}
 	}
 }

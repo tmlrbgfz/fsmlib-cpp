@@ -333,7 +333,7 @@ Fsm OFSMTable::toFsm(const string & name) const
                              */
 							shared_ptr<FsmTransition> tr = make_shared<FsmTransition>(srcNode,
                                                                                       tgtNode,
-                                                                                      make_shared<FsmLabel>(x, y, minPl));
+                                                                                      make_shared<FsmLabel>(x, y, minPl.get()));
 							srcNode->addTransition(tr);
 							break;
 						}

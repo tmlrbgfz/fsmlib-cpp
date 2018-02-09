@@ -245,7 +245,7 @@ Dfsm PkTable::toFsm(string name, const int maxOutput)
 					break;
 				}
 			}
-			shared_ptr<FsmLabel> lbl = make_shared<FsmLabel>(x, y, minPl);
+			shared_ptr<FsmLabel> lbl = make_shared<FsmLabel>(x, y, minPl.get());
 			srcNode->addTransition(make_shared<FsmTransition>(srcNode,
                                                               tgtNode,
                                                               lbl));

@@ -321,7 +321,10 @@ static void readModel(model_type_t mtp,
                 pl = make_shared<FsmPresentationLayer>();
             }
             else {
-                pl = make_shared<FsmPresentationLayer>(plInputFile,plOutputFile,plStateFile);
+                std::ifstream inputFile(plInputFile);
+                std::ifstream outputFile(plOutputFile);
+                std::ifstream stateFile(plStateFile);
+                pl = make_shared<FsmPresentationLayer>(inputFile,outputFile,stateFile);
             }
             myFsm = make_shared<Fsm>(modelFile,pl,fsmName);
             if ( myFsm->isDeterministic() ) {

@@ -4,6 +4,7 @@
  * Licensed under the EUPL V.1.1
  */
 #include "trees/TestSuite.h"
+#include <fstream>
 
 
 using namespace std;

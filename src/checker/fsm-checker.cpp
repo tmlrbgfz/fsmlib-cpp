@@ -186,8 +186,8 @@ static void executeTestCase(const char* tcId, char* line) {
         getNextIO(&p,&x,&y);
         
         if ( x != NULL && y != NULL ) {
-            xInt = pl->in2Num(x);
-            yInt = pl->out2Num(y);
+            xInt = pl->in2Num(x).value();
+            yInt = pl->out2Num(y).value();
         }
         else {
             cerr << "Could not parse test case " << theLine << endl;
