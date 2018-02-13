@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 #include <boost/optional/optional.hpp>
+#include <memory>
 
 class FsmPresentationLayer
 {
@@ -59,6 +60,8 @@ public:
 	FsmPresentationLayer(std::istream & inputs,
                          std::istream & outputs,
                          std::istream & states);
+	
+	std::unique_ptr<FsmPresentationLayer> clone() const;
 
     void addState2String(std::string name);
     void removeState2String(const int index);

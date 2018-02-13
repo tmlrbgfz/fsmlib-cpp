@@ -45,6 +45,10 @@ FsmPresentationLayer::FsmPresentationLayer(std::istream& inputs, std::istream& o
 	}
 }
 
+std::unique_ptr<FsmPresentationLayer> FsmPresentationLayer::clone() const {
+	return std::unique_ptr<FsmPresentationLayer>(new FsmPresentationLayer(*this));
+}
+
 void FsmPresentationLayer::addState2String(std::string name)
 {
     state2String.push_back(name);
