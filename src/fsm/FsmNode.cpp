@@ -119,11 +119,11 @@ shared_ptr<FsmNode> FsmNode::apply(const int e, OutputTrace & o)
 
 OutputTree FsmNode::apply(const InputTrace& itrc, bool markAsVisited)
 {
-    deque<shared_ptr<TreeNode>> tnl;
-    unordered_map<shared_ptr<TreeNode>, shared_ptr<FsmNode>> t2f;
+    deque<TreeNode*> tnl;
+    unordered_map<TreeNode*, shared_ptr<FsmNode>> t2f;
     
-    shared_ptr<TreeNode> root = make_shared<TreeNode>();
-    OutputTree ot = OutputTree(root, itrc, presentationLayer);
+    TreeNode *root = new TreeNode();
+    OutputTree ot = OutputTree(std::shared_ptr<TreeNode>(root), itrc, presentationLayer);
     
     if (itrc.get().size() == 0)
     {
@@ -136,7 +136,7 @@ OutputTree FsmNode::apply(const InputTrace& itrc, bool markAsVisited)
     {
         int x = *it;
         
-        vector< shared_ptr<TreeNode> > vaux = ot.getLeaves();
+        vector< TreeNode* > vaux = ot.getLeaves();
         
         for ( auto n : vaux ) {
             tnl.push_back(n);
@@ -144,7 +144,7 @@ OutputTree FsmNode::apply(const InputTrace& itrc, bool markAsVisited)
         
         while (!tnl.empty())
         {
-            shared_ptr<TreeNode> thisTreeNode = tnl.front();
+            TreeNode* thisTreeNode = tnl.front();
             tnl.pop_front();
             
             shared_ptr<FsmNode> thisState = t2f.at(thisTreeNode);
@@ -156,9 +156,9 @@ OutputTree FsmNode::apply(const InputTrace& itrc, bool markAsVisited)
                 {
                     int y = tr->getLabel()->getOutput();
                     shared_ptr<FsmNode> tgtState = tr->getTarget();
-                    shared_ptr<TreeNode> tgtNode = make_shared<TreeNode>();
-                    shared_ptr<TreeEdge> te = make_shared<TreeEdge>(y, tgtNode);
-                    thisTreeNode->add(te);
+                    TreeNode *tgtNode = new TreeNode();
+                    std::unique_ptr<TreeEdge> te { new TreeEdge(y, std::shared_ptr<TreeNode>(tgtNode)) };
+                    thisTreeNode->add(std::move(te));
                     t2f[tgtNode] = tgtState;
                     if ( markAsVisited ) tgtState->setVisited();
                 }

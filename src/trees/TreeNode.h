@@ -13,18 +13,17 @@
 #include "trees/IOListContainer.h"
 #include "trees/TreeEdge.h"
 
-class TreeNode : public std::enable_shared_from_this<TreeNode>
-{
+class TreeNode {
 protected:
 	/**
 	The parent of this node
 	*/
-	std::weak_ptr<TreeNode> parent;
+	TreeNode *parent;
 
 	/**
 	A list containing the children of this node
 	*/
-	std::shared_ptr<std::vector<std::shared_ptr<TreeEdge>>> children;
+	std::vector<std::unique_ptr<TreeEdge>> children;
 
 	/**
 	Mark this node as deleted
@@ -40,23 +39,25 @@ public:
 	Create a new tree node
 	*/
 	TreeNode();
+	//No copy constructor. Use clone() instead.
+	TreeNode(TreeNode const &) = delete;
 
     /**
      * Create a copy of this TreeNode and all its children
      */
-    std::shared_ptr<TreeNode> clone() const;
+    std::unique_ptr<TreeNode> clone() const;
 
 	/**
 	Set the node to this one parent
 	@param pparent The node which will be the parent of this one
 	*/
-	void setParent(const std::weak_ptr<TreeNode> parent);
+	void setParent(TreeNode *parent);
 
 	/**
 	Getter for the parent
 	@return The parent
 	*/
-	std::weak_ptr<TreeNode> getParent() const;
+	TreeNode * getParent() const;
 
 	/**
 	Mark this node as deleted.
@@ -84,25 +85,26 @@ public:
 	Getter for the children
 	@return The children
 	*/
-	std::shared_ptr<std::vector<std::shared_ptr<TreeEdge>>> getChildren() const;
+	std::vector<std::unique_ptr<TreeEdge>> const & getChildren() const;
+	std::vector<std::unique_ptr<TreeEdge>> & getChildren();
 
 	/**
 	Remove a tree node from this node's children target
 	@param node The target to remove
 	*/
-	void remove(const std::shared_ptr<TreeNode> node);
+	void remove(TreeNode const *node);
 
 	/**
 	Calc the list of leaves of this tree
 	@param leaves An empty list, it will be used to insert the leaves
 	*/
-	void calcLeaves(std::vector<std::shared_ptr<TreeNode>>& leaves);
+	void calcLeaves(std::vector<TreeNode*>& leaves);
 
 	/**
 	Add and edge to this node children
 	@param edge The edge to be added
 	*/
-	void add(const std::shared_ptr<TreeEdge> edge);
+	void add(std::unique_ptr<TreeEdge> &&edge);
 
 	/**
 	Check whether or not this tree node had any child or not
@@ -116,20 +118,20 @@ public:
 	@param node The node to be searched into the tree node's children target
 	@return The input needed to reach the tree node
 	*/
-	int getIO(const std::shared_ptr<TreeNode> node) const;
+	int getIO(TreeNode const *node) const;
 
 	/**
 	Check whether or not this tree node has a specific edge or not
 	@param edge The edge to be searched into the tree node's children
 	@return The tree edge if found, nullptr otherwise
 	*/
-	std::shared_ptr<TreeEdge> hasEdge(const std::shared_ptr<TreeEdge> edge) const;
+	TreeEdge * hasEdge(TreeEdge const *edge) const;
 
 	/**
 	Get the inputs needed to reach this specific tree node
 	@return The path
 	*/
-	std::vector<int> getPath();
+	std::vector<int> getPath() const;
 
 	/**
 	 * Compare with an other three node to see if it is a super tree of this one or not
@@ -139,7 +141,7 @@ public:
      * @note This operation really checks trees for isomorphic structure. This is not
      *       adequate when applied to output tree nodes resulting from non-observable FSMs.
 	 */
-	bool superTreeOf(const std::shared_ptr<TreeNode> otherNode) const;
+	bool superTreeOf(TreeNode const *otherNode) const;
 
 	/**
 	Compare two tree node to check if they are the same or not
@@ -159,7 +161,7 @@ public:
 	if no new edge has been created, or
 	the new leaf node, if a new edge has been created.
 	*/
-	std::shared_ptr<TreeNode> add(const int x);
+	TreeNode *add(const int x);
 
 	/**
 	First delegate the work to the children, then append each input
@@ -177,10 +179,10 @@ public:
 	void addToThisNode(const IOListContainer & tcl);
     void addToThisNode(const std::vector<int> &lst);
     int tentativeAddToThisNode(std::vector<int>::const_iterator start,
-                               std::vector<int>::const_iterator stop);
+                               std::vector<int>::const_iterator stop) const;
     int tentativeAddToThisNode(std::vector<int>::const_iterator start,
                                std::vector<int>::const_iterator stop,
-                               std::shared_ptr<TreeNode>& n);
+                               TreeNode const *&n) const;
 	/**
 	Return target TreeNode reached after following the inputs
 	from a given trace in the Tree.
@@ -191,8 +193,7 @@ public:
 	TreeNode reached after having successfully matched the whole
 	input trace against the tree.
 	*/
-	std::shared_ptr<TreeNode> after(std::vector<int>::const_iterator lstIte, const std::vector<int>::const_iterator end);
-    
+	TreeNode * after(std::vector<int>::const_iterator lstIte, const std::vector<int>::const_iterator end);
     
     void calcSize(size_t& theSize);
     
@@ -205,9 +206,7 @@ public:
      *
      */
     void traverse(std::vector<int>& v,
-                  std::shared_ptr<std::vector<std::vector<int>>> ioll);
-    
-    
-
+                  std::vector<std::vector<int>> &ioll);
+                  //IOListContainer::IOListBaseType &ioll);
 };
 #endif //FSM_TREES_TREENODE_H_

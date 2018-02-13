@@ -572,10 +572,10 @@ shared_ptr<Tree> Fsm::getStateCover()
 {
     resetColor();
     deque<shared_ptr<FsmNode>> bfsLst;
-    unordered_map<shared_ptr<FsmNode>, shared_ptr<TreeNode>> f2t;
+    unordered_map<shared_ptr<FsmNode>, TreeNode*> f2t;
     
-    shared_ptr<TreeNode> root = make_shared<TreeNode>();
-    shared_ptr<Tree> scov = make_shared<Tree>(root, presentationLayer);
+    TreeNode *root = new TreeNode();
+    shared_ptr<Tree> scov = make_shared<Tree>(std::shared_ptr<TreeNode>(root), presentationLayer);
     
     shared_ptr<FsmNode> initState = getInitialState();
     initState->setColor(FsmNode::grey);
@@ -586,7 +586,7 @@ shared_ptr<Tree> Fsm::getStateCover()
     {
         shared_ptr<FsmNode> thisNode = bfsLst.front();
         bfsLst.pop_front();
-        shared_ptr<TreeNode> currentTreeNode = f2t[thisNode];
+        TreeNode *currentTreeNode = f2t[thisNode];
         
         for (int x = 0; x <= maxInput; ++x)
         {
@@ -595,7 +595,7 @@ shared_ptr<Tree> Fsm::getStateCover()
                 if (tgt->getColor() == FsmNode::white)
                 {
                     tgt->setColor(FsmNode::grey);
-                    shared_ptr<TreeNode> itn = currentTreeNode->add(x);
+                    TreeNode *itn = currentTreeNode->add(x);
                     bfsLst.push_back(tgt);
                     f2t[tgt] = itn;
                 }
@@ -880,7 +880,7 @@ void Fsm::minimiseCharSet(const shared_ptr<Tree> w)
 
 IOListContainer Fsm::getCharacterisationSet()
 {
-    
+   std::cout << "Calculating characterisation set." << std::endl;
     // Do we already have a characterisation set ?
     if ( characterisationSet != nullptr ) {
         IOListContainer tcl = characterisationSet->getIOLists();

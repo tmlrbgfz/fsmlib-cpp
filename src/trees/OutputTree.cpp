@@ -11,7 +11,7 @@ using namespace std;
 void OutputTree::printChildrenOutput(ostream& out, const shared_ptr<TreeNode> top, const shared_ptr<int> idNode, const int idInput) const
 {
 	int idNodeBase = *idNode;
-	for (shared_ptr<TreeEdge> edge : *top->getChildren())
+	for (auto const &edge : top->getChildren())
 	{
 		out << idNodeBase << " -> " << ++ *idNode << "[label = \"" << inputTrace.get().at(idInput) << "/" << edge->getIO() << "\" ];" << endl;
 		printChildrenOutput(out, edge->getTarget(), idNode, idInput + 1);

@@ -17,9 +17,9 @@ void Tree::remove(const shared_ptr<TreeNode> thisNode, const shared_ptr<TreeNode
 {
 	thisNode->deleteNode();
 
-	for (shared_ptr<TreeEdge> e : *thisNode->getChildren())
+	for (auto const &e : thisNode->getChildren())
 	{
-		shared_ptr<TreeEdge> eOther = otherNode->hasEdge(e);
+		TreeEdge *eOther = otherNode->hasEdge(e.get());
 		if (eOther != nullptr)
 		{
 			remove(e->getTarget(), eOther->getTarget());
@@ -30,7 +30,7 @@ void Tree::remove(const shared_ptr<TreeNode> thisNode, const shared_ptr<TreeNode
 void Tree::printChildren(ostream & out, const shared_ptr<TreeNode> top, const shared_ptr<int> idNode) const
 {
 	int idNodeBase = *idNode;
-	for (shared_ptr<TreeEdge> edge : *top->getChildren())
+	for (auto const &edge : top->getChildren())
 	{
 		out << idNodeBase << " -> " << ++ *idNode << "[label = \"" << edge->getIO() << "\" ];" << endl;
 		printChildren(out, edge->getTarget(), idNode);
@@ -57,7 +57,7 @@ Tree::Tree(const shared_ptr<TreeNode> root, const shared_ptr<FsmPresentationLaye
 
 }
 
-vector<shared_ptr<TreeNode>> Tree::getLeaves()
+vector<TreeNode*> Tree::getLeaves()
 {
 	calcLeaves();
 	return leaves;
@@ -70,14 +70,14 @@ shared_ptr<TreeNode> Tree::getRoot() const
 
 shared_ptr<Tree> Tree::getSubTree(const shared_ptr<InputTrace> alpha)
 {
-    shared_ptr<TreeNode> afterAlpha = root->after(alpha->cbegin(), alpha->cend());
-    shared_ptr<TreeNode> cpyNode = afterAlpha->clone();
+    TreeNode *afterAlpha = root->after(alpha->cbegin(), alpha->cend());
+    shared_ptr<TreeNode> cpyNode { afterAlpha->clone().release() };
     return make_shared<Tree>(cpyNode, presentationLayer);
 }
 
 shared_ptr<TreeNode> Tree::getSubTree(shared_ptr< vector<int> > alpha) {
     
-    return root->after(alpha->begin(),alpha->end());
+    return std::shared_ptr<TreeNode>(root->after(alpha->begin(),alpha->end()));
 }
 
 IOListContainer Tree::getIOLists()
@@ -85,7 +85,7 @@ IOListContainer Tree::getIOLists()
 	shared_ptr<vector<vector<int>>> ioll = make_shared<vector<vector<int>>>();
 	calcLeaves();
 
-	for (shared_ptr<TreeNode> n : leaves)
+	for (TreeNode *n : leaves)
 	{
 		ioll->push_back(n->getPath());
 	}
@@ -104,7 +104,7 @@ IOListContainer Tree::getIOListsWithPrefixes()
     
     // Perform in-order traversal of the tree
     // and create all I/O-lists.
-    root->traverse(thisVec,ioll);
+    root->traverse(thisVec,*ioll);
     
     return IOListContainer(ioll, presentationLayer);
 }
@@ -151,7 +151,7 @@ void Tree::unionTree(const shared_ptr<Tree> otherTree)
 
 void Tree::addAfter(const InputTrace & tr, const IOListContainer & cnt)
 {
-	shared_ptr<TreeNode> n = root->after(tr.cbegin(), tr.cend());
+	TreeNode *n = root->after(tr.cbegin(), tr.cend());
 
 	if (n == nullptr)
 	{
@@ -222,11 +222,11 @@ int Tree::tentativeAddToRoot(const std::vector<int>& alpha) {
 int Tree::tentativeAddToRoot(SegmentedTrace& alpha) const {
     
     int r;
-    shared_ptr<TreeNode> n = root;
+    TreeNode const *n = root.get();
     
     for ( size_t i = 0; i < alpha.size(); i++ ) {
         shared_ptr<TraceSegment> seg = alpha.getSegments().at(i);
-        r = n->tentativeAddToThisNode(seg->get()->cbegin(), seg->get()->cend(),n);
+        r = n->tentativeAddToThisNode(seg->get()->cbegin(), seg->get()->cend(), n);
         if ( r > 0 ) return r;
     }
     

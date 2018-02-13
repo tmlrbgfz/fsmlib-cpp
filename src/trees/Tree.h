@@ -28,7 +28,7 @@ protected:
 	/**
 	The list of the leaves of this tree (empty, unless you call calcleaves)
 	*/
-	std::vector<std::shared_ptr<TreeNode>> leaves;
+	std::vector<TreeNode*> leaves;
 
 	/**
 	The presentation layer used by this tree
@@ -69,7 +69,7 @@ public:
 	Calculate the leaves, then give the leaves back
 	@return The leaves of this tree
 	*/
-	std::vector<std::shared_ptr<TreeNode>> getLeaves();
+	std::vector<TreeNode*> getLeaves();
 
 	/**
 	Getter for the root of this tree

@@ -1381,11 +1381,11 @@ InputTrace Dfsm::calcDistinguishingTraceInTree(
         const shared_ptr<Tree> tree)
 {
     shared_ptr<TreeNode> root = tree->getRoot();
-    shared_ptr<TreeNode> currentNode = root;
+    TreeNode *currentNode = root.get();
     deque<shared_ptr<InputTrace>> q1;
 
     /* initialize queue */
-    for (const shared_ptr<TreeEdge> &e : *currentNode->getChildren())
+    for (auto const &e : currentNode->getChildren())
     {
         shared_ptr<InputTrace> itrc = make_shared<InputTrace>(presentationLayer);
         itrc->add(e->getIO());
@@ -1405,7 +1405,7 @@ InputTrace Dfsm::calcDistinguishingTraceInTree(
 
         currentNode = root->after(itrc->cbegin(), itrc->cend());
 
-        for (const shared_ptr<TreeEdge> &ne : *currentNode->getChildren())
+        for (auto const &ne : currentNode->getChildren())
         {
             shared_ptr<InputTrace> itrcTmp = make_shared<InputTrace>(itrc->get(), presentationLayer);
             vector<int>nItrc;
@@ -1431,8 +1431,8 @@ InputTrace Dfsm::calcDistinguishingTraceAfterTree(
         const shared_ptr<FsmNode> s_j,
         const shared_ptr<Tree> tree)
 {
-    vector<shared_ptr<TreeNode>> leaves = tree->getLeaves();
-    for(const shared_ptr<TreeNode> &leaf : leaves)
+    vector<TreeNode*> leaves = tree->getLeaves();
+    for(TreeNode const *leaf : leaves)
     {
         shared_ptr<InputTrace> itrc = make_shared<InputTrace>(leaf->getPath(), presentationLayer);
         shared_ptr<FsmNode> s_i_after_input = *(s_i->after(*itrc)).begin();
