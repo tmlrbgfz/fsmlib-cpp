@@ -42,46 +42,15 @@ InputTrace OutputTree::getInputTrace() const
     return inputTrace;
 }
 
-bool OutputTree::contains(OutputTree& ot)
-{
+bool OutputTree::contains(OutputTree const &ot) const {
     
-    vector<IOTrace> myOutputs;
-    vector<IOTrace> otherOutputs;
-    
-    toIOTrace(myOutputs);
-    ot.toIOTrace(otherOutputs);
+    vector<IOTrace> myOutputs = toIOTrace();
+    vector<IOTrace> otherOutputs = ot.toIOTrace();
     
     // Check whether every trace of ot is also contained as a trace in this.
-    for ( auto trc : otherOutputs ) {
-        
-        bool found = false;
-        
-        for ( auto myTrc : myOutputs ) {
-            if ( myTrc == trc ) {
-                found = true;
-                break;
-            }
-        }
-        
-        if ( not found ) return false;
-        
-    }
-    
-    return true;
-    
-#if 0
-    // This does not work for OutputTrees generated from unobservable FSMs
-    
-	/* If the associated input traces differ,
-	the output trees can never be equal*/
-	if (!(inputTrace == ot.inputTrace))
-	{
-		return false;
-	}
-
-	return getRoot()->superTreeOf(ot.getRoot());
-#endif
-    
+	return std::all_of(otherOutputs.cbegin(), otherOutputs.cend(), [&myOutputs](IOTrace const &otherTrace)->bool{
+		return std::find(myOutputs.cbegin(), myOutputs.cend(), otherTrace) != myOutputs.cend();
+	});
 }
 
 void OutputTree::toDot(ostream& out) const
@@ -111,22 +80,18 @@ void OutputTree::store(std::ofstream& file)
 	}
 }
 
-void OutputTree::toIOTrace(vector<IOTrace> &iotrVec) {
-    
-    
+std::vector<IOTrace> OutputTree::toIOTrace() const {
     IOListContainer::IOListBaseType lli = getIOLists().getIOLists();
-    for (vector<int> const &lst : lli)
-    {
-        
+	std::vector<IOTrace> result;
+    for (vector<int> const &lst : lli) {
         OutputTrace otrc(lst,std::shared_ptr<FsmPresentationLayer>(presentationLayer->clone().release()));
         IOTrace iotrc(inputTrace,otrc);
-        iotrVec.push_back(iotrc);
-        
+        result.push_back(iotrc);
     }
-    
+	return result;
 }
 
-ostream& operator<<(ostream& out, OutputTree& ot)
+ostream& operator<<(ostream& out, OutputTree const &ot)
 {
 	IOListContainer::IOListBaseType lli = ot.getIOLists().getIOLists();
 	for (vector<int> const &lst : lli)
@@ -143,7 +108,7 @@ ostream& operator<<(ostream& out, OutputTree& ot)
 	return out;
 }
 
-bool operator==(OutputTree& outputTree1, OutputTree& outputTree2)
+bool operator==(OutputTree const &outputTree1, OutputTree const &outputTree2)
 {
     
     return ( outputTree1.contains(outputTree2) and outputTree2.contains(outputTree1) );
@@ -173,7 +138,7 @@ bool operator==(OutputTree& outputTree1, OutputTree& outputTree2)
 #endif
 }
 
-bool operator!=(OutputTree& outputTree1, OutputTree& outputTree2)
+bool operator!=(OutputTree const &outputTree1, OutputTree const &outputTree2)
 {
     return not (outputTree1 == outputTree2);
 }

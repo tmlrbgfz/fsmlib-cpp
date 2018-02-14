@@ -1348,8 +1348,7 @@ static void generateTestSuite() {
         for ( size_t tIdx = 0; tIdx < testSuite->size(); tIdx++ ) {
             
             OutputTree ot = testSuite->at(tIdx);
-            vector<IOTrace> iotrcVec;
-            ot.toIOTrace(iotrcVec);
+            vector<IOTrace> iotrcVec = ot.toIOTrace();
             
             for ( size_t iIdx = 0; iIdx < iotrcVec.size(); iIdx++ ) {
                 ostringstream tcFileName;

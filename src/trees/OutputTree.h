@@ -72,7 +72,7 @@ public:
      * @note This operations re-calculates the leaves of this and of ot,
      *        so int changes the internal state of both objects.
 	*/
-	bool contains(OutputTree& ot);
+	bool contains(OutputTree const &ot) const;
 
 	/**
 	 * Store the OutputTree to a standard output file in dot format
@@ -89,7 +89,7 @@ public:
     /**
      *  Transform output tree into vector of IO traces.
      */
-    void toIOTrace(std::vector<IOTrace>& iotrVec);
+    std::vector<IOTrace> toIOTrace() const;
 
 	/**
 	 * Output the OutputTree to a standard output stream
@@ -97,7 +97,7 @@ public:
 	 * @param ot The OutputTree to print
 	 * @return The standard output stream used, to allow user to cascade <<
 	 */
-	friend std::ostream& operator<<(std::ostream& out, OutputTree& ot);
+	friend std::ostream& operator<<(std::ostream& out, OutputTree const &ot);
 
 	/**
 	 * Check this OutputTree instance and the instance ot for equality
@@ -118,9 +118,9 @@ public:
      * @note Checking for equality (or inequality) has a side effect on the output trees involved:
      *       Their leaves are calculated again.
 	 */
-	friend bool operator==(OutputTree& outputTree1, OutputTree& outputTree2);
+	friend bool operator==(OutputTree const &outputTree1, OutputTree const &outputTree2);
     
     /** complementary operator to == */
-    friend bool operator!=(OutputTree& outputTree1, OutputTree& outputTree2);
+    friend bool operator!=(OutputTree const &outputTree1, OutputTree const &outputTree2);
 };
 #endif //FSM_TREES_OUTPUTTREE_H_

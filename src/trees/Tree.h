@@ -82,6 +82,7 @@ public:
 	@return The leaves of this tree
 	*/
 	std::vector<TreeNode*> getLeaves();
+	std::vector<TreeNode*> getLeaves() const;
 
 	/**
 	Getter for the root of this tree
@@ -99,6 +100,7 @@ public:
      *         as a vector.
      */
 	IOListContainer getIOLists();
+	IOListContainer getIOLists() const;
     
     /**
      * Get vector of all I/O lists in the tree, including all prefixes.
@@ -154,7 +156,7 @@ public:
 	Construct the union of this Tree and otherTree by adding
 	every maximal input trace of otherTree to this inputTree.
 	*/
-	void unionTree(Tree *otherTree);
+	void unionTree(Tree const *otherTree);
 
 	//TODO
 	void addAfter(const InputTrace & tr, const IOListContainer & cnt);
@@ -175,7 +177,7 @@ public:
      *           the resulting tree.
      *  @return Tree
      */
-    std::unique_ptr<Tree> getPrefixRelationTree(Tree *b);
+    std::unique_ptr<Tree> getPrefixRelationTree(Tree const *b) const;
     
     /**
      * create a deep copy of a subtree that is reached by alpha

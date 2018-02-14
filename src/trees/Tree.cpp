@@ -75,6 +75,26 @@ std::vector<TreeNode*> Tree::getLeaves()
 	return leaves;
 }
 
+std::vector<TreeNode*> Tree::getLeaves() const
+{
+    std::deque<TreeNode*> worklist;
+    worklist.push_back(root.get());
+    std::vector<TreeNode*> leaves;
+    while(!worklist.empty()) {
+        TreeNode *front = worklist.front();
+        worklist.pop_front();
+        if(front->getChildren().size() == 0) {
+            leaves.push_back(front);
+        } else {
+            std::transform(front->getChildren().begin(), front->getChildren().end(),
+                           std::back_inserter(worklist), [](std::unique_ptr<TreeEdge> const &edge){
+                return edge->getTarget();
+            });
+        }
+    }
+	return leaves;
+}
+
 TreeNode* Tree::getRoot() const
 {
 	return root.get();
@@ -94,9 +114,8 @@ TreeNode* Tree::getSubTree( std::vector<int> const *alpha) const {
 IOListContainer Tree::getIOLists()
 {
     IOListContainer::IOListBaseType ioll;
-	calcLeaves();
 
-	for (TreeNode *n : leaves)
+	for (TreeNode *n : getLeaves())
 	{
 		ioll.push_back(n->getPath());
 	}
@@ -104,7 +123,16 @@ IOListContainer Tree::getIOLists()
 	return IOListContainer(ioll, presentationLayer->clone());
 }
 
+IOListContainer Tree::getIOLists() const {
+    IOListContainer::IOListBaseType ioll;
 
+	for (TreeNode *n : getLeaves())
+	{
+		ioll.push_back(n->getPath());
+	}
+
+	return IOListContainer(ioll, presentationLayer->clone());
+}
 
 IOListContainer Tree::getIOListsWithPrefixes() const
 {
@@ -155,7 +183,7 @@ void Tree::addToRoot(const std::vector<int> &lst)
     root->addToThisNode(lst);
 }
 
-void Tree::unionTree(Tree *otherTree)
+void Tree::unionTree(Tree const *otherTree)
 {
 	addToRoot(otherTree->getIOLists());
 }
@@ -178,7 +206,7 @@ size_t Tree::size() const {
     return theSize;
 }
 
-std::unique_ptr<Tree> Tree::getPrefixRelationTree(Tree *b) {
+std::unique_ptr<Tree> Tree::getPrefixRelationTree(Tree const *b) const {
     IOListContainer aIOlst = getIOLists();
     IOListContainer bIOlst = b->getIOLists();
 
