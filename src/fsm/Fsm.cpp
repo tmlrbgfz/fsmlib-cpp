@@ -1089,7 +1089,7 @@ void Fsm::calcStateIdentificationSetsFast()
                     {
                         distinguish.at(i).at(j) = traceIdx;
                         distinguish.at(j).at(i) = traceIdx;
-                        Trace tr(trc,presentationLayer);
+                        Trace tr(trc,presentationLayer->clone());
                         node2iolc.at(i)->add(tr);
                         node2iolc.at(j)->add(tr);
                     }

@@ -6,13 +6,13 @@
 #include "fsm/OutputTrace.h"
 
 OutputTrace::OutputTrace(const std::shared_ptr<FsmPresentationLayer> presentationLayer)
-	: Trace(presentationLayer)
+	: Trace(presentationLayer->clone())
 {
 
 }
 
 OutputTrace::OutputTrace(const std::vector<int>& trace, const std::shared_ptr<FsmPresentationLayer> presentationLayer)
-	: Trace(trace, presentationLayer)
+	: Trace(trace, presentationLayer->clone())
 {
 
 }

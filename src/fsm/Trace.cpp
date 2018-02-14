@@ -5,78 +5,48 @@
  */
 #include "fsm/Trace.h"
 
-Trace::Trace(const std::shared_ptr<FsmPresentationLayer> presentationLayer)
-	: presentationLayer(presentationLayer)
+Trace::Trace(std::unique_ptr<FsmPresentationLayer> &&presentationLayer)
+	: presentationLayer(std::move(presentationLayer))
 {
 
 }
 
-Trace::Trace(const std::vector<int>& trace, const std::shared_ptr<FsmPresentationLayer> presentationLayer)
-	: trace(trace), presentationLayer(presentationLayer)
+Trace::Trace(const std::vector<int>& trace, std::unique_ptr<FsmPresentationLayer> &&presentationLayer)
+	: trace(trace), presentationLayer(std::move(presentationLayer))
 {
 
 }
 
-void Trace::add(const int e)
-{
+Trace::Trace(Trace const &other)
+	: trace(other.trace), presentationLayer(other.presentationLayer->clone()) {
+}
+
+void Trace::add(const int e) {
 	trace.push_back(e);
 }
 
 void Trace::append(const std::vector<int>& traceToAppend) {
-    
-    for ( size_t i = 0; i < traceToAppend.size(); i++ ) {
-        trace.push_back(traceToAppend.at(i));
-    }
-    
+	trace.insert(trace.end(), traceToAppend.begin(), traceToAppend.end());
 }
 
-std::vector<int> Trace::get() const
-{
+std::vector<int> Trace::get() const {
 	return trace;
 }
 
-std::vector<int>::const_iterator Trace::cbegin() const
-{
+std::vector<int>::const_iterator Trace::cbegin() const {
 	return trace.cbegin();
 }
 
-std::vector<int>::const_iterator Trace::cend() const
-{
+std::vector<int>::const_iterator Trace::cend() const {
 	return trace.cend();
 }
 
-bool operator==(Trace const & trace1, Trace const & trace2)
-{
-	if (trace1.get().size() != trace2.get().size())
-	{
-		return false;
-	}
-
-	for (unsigned int i = 0; i < trace1.get().size(); ++ i)
-	{
-		if (trace1.get().at(i) != trace2.get().at(i))
-		{
-			return false;
-		}
-	}
-	return true;
+bool operator==(Trace const & trace1, Trace const & trace2) {
+	return trace1.get() == trace2.get();
 }
 
-bool operator==(Trace const & trace1, std::vector<int> const & trace2)
-{
-    if (trace1.get().size() != trace2.size())
-    {
-        return false;
-    }
-
-    for (unsigned int i = 0; i < trace1.get().size(); ++ i)
-    {
-        if (trace1.get()[i] != trace2[i])
-        {
-            return false;
-        }
-    }
-    return true;
+bool operator==(Trace const & trace1, std::vector<int> const & trace2) {
+	return trace1.get() == trace2;
 }
 
 std::ostream & operator<<(std::ostream & out, const Trace & trace)
