@@ -59,7 +59,7 @@ void test1() {
     inp.push_back(1);
     
     
-    InputTrace i(inp,pl);
+    InputTrace i(inp,pl->clone());
     
     cout << "InputTrace = " << i << endl;
     
@@ -80,7 +80,7 @@ void test1() {
     
     
     inp.insert(inp.begin(),9);
-    InputTrace j(inp,pl);
+    InputTrace j(inp,pl->clone());
     IOTrace u = d.applyDet(j);
     cout << "IOTrace u = " << u << endl;
     assert("TC-DFSM-0001",
@@ -241,7 +241,7 @@ void test4() {
         IOListContainer::IOListBaseType iols = c.getIOLists();
         
         for ( auto const &inLst : iols ) {
-            auto iTr = make_shared<InputTrace>(inLst,pl);
+            auto iTr = make_shared<InputTrace>(inLst,pl->clone());
             f->apply(*iTr,true);
         }
         
@@ -264,7 +264,7 @@ void test4() {
                 for ( auto const &inLst : iols ) {
                     ostringstream oss;
                     oss << iCtr++;
-                    auto iTr = make_shared<InputTrace>(inLst,pl);
+                    auto iTr = make_shared<InputTrace>(inLst,pl->clone());
                     filebuf fbot;
                     OutputTree ot = f->apply(*iTr,markAsVisited);
                     fbot.open ("FailedStateCover" + oss.str() + ".dot",
@@ -529,7 +529,7 @@ void test10() {
             
             for ( auto const &inputs : inLst ) {
                 
-                shared_ptr<InputTrace> itr = make_shared<InputTrace>(inputs,pl);
+                shared_ptr<InputTrace> itr = make_shared<InputTrace>(inputs,pl->clone());
                 
                 OutputTree o1 = node1->apply(*itr);
                 OutputTree o2 = node2->apply(*itr);
@@ -585,7 +585,7 @@ void gdc_test1() {
     shared_ptr< TestSuite > testSuite =
         make_shared< TestSuite >();
     for ( auto const &inVec : iolc.getIOLists() ) {
-        shared_ptr<InputTrace> itrc = make_shared<InputTrace>(inVec,pl);
+        shared_ptr<InputTrace> itrc = make_shared<InputTrace>(inVec,pl->clone());
         testSuite->push_back(gdc->apply(*itrc));
     }
     
@@ -618,7 +618,7 @@ vector<IOTrace> runAgainstRefModel(shared_ptr<Dfsm> refModel,
 
     for ( auto const &lst : iolCnt ) {
         
-        shared_ptr<InputTrace> itr = make_shared<InputTrace>(lst,pl);
+        shared_ptr<InputTrace> itr = make_shared<InputTrace>(lst,pl->clone());
         IOTrace iotr = refModel->applyDet(*itr);
         iotrLst.push_back(iotr);
         

@@ -299,7 +299,7 @@ shared_ptr<DFSMTableRow> FsmNode::getDFSMTableRow(const int maxInput)
 
 bool FsmNode::distinguished(const shared_ptr<FsmNode> otherNode, const vector<int>& iLst)
 {
-    InputTrace itr = InputTrace(iLst, presentationLayer);
+    InputTrace itr = InputTrace(iLst, presentationLayer->clone());
     OutputTree ot1 = apply(itr);
     OutputTree ot2 = otherNode->apply(itr);
     
@@ -315,7 +315,7 @@ shared_ptr<InputTrace> FsmNode::distinguished(const shared_ptr<FsmNode> otherNod
     {
         if (distinguished(otherNode, iLst))
         {
-            return make_shared<InputTrace>(iLst, presentationLayer);
+            return make_shared<InputTrace>(iLst, presentationLayer->clone());
         }
     }
     return nullptr;
@@ -343,7 +343,7 @@ InputTrace FsmNode::calcDistinguishingTrace(const shared_ptr<FsmNode> otherNode,
     shared_ptr<FsmNode> qi = shared_from_this();
     shared_ptr<FsmNode> qj = otherNode;
     
-    InputTrace itrc = InputTrace(presentationLayer);
+    InputTrace itrc = InputTrace(presentationLayer->clone());
     
     for (int k = 1; l - k > 0; ++ k)
     {
@@ -405,7 +405,7 @@ InputTrace FsmNode::calcDistinguishingTrace(const shared_ptr<FsmNode> otherNode,
                                             const int maxInput,
                                             const int maxOutput)
 {
-    InputTrace itrc = InputTrace(presentationLayer);
+    InputTrace itrc = InputTrace(presentationLayer->clone());
     int q1 = this->getId();
     int q2 = otherNode->getId();
     

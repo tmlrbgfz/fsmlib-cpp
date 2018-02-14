@@ -1129,7 +1129,7 @@ void Fsm::appendStateIdentificationSets(const shared_ptr<Tree> Wp2) const
     
     for (vector<int> lli : cnt.getIOLists())
     {
-        InputTrace itrc = InputTrace(lli, presentationLayer);
+        InputTrace itrc = InputTrace(lli, presentationLayer->clone());
         
         /*Which are the target nodes reachable via input trace lli
          in this FSM?*/
@@ -1281,7 +1281,7 @@ IOListContainer Fsm::hsiMethod(const unsigned int numAddStates)
     IOListContainer cnt = hsi->getIOLists();
     for (auto lli : cnt.getIOLists())
     {
-        InputTrace itrc = InputTrace(lli, presentationLayer);
+        InputTrace itrc = InputTrace(lli, presentationLayer->clone());
 
         /*Which are the target nodes reachable via input trace lli
          in this FSM?*/
@@ -1310,7 +1310,7 @@ TestSuite Fsm::createTestSuite(IOListContainer testCases)
     
     for (unsigned int i = 0; i < tcLst.size(); ++ i)
     {
-        OutputTree ot = apply(InputTrace(tcLst.at(i), presentationLayer));
+        OutputTree ot = apply(InputTrace(tcLst.at(i), presentationLayer->clone()));
         theSuite.push_back(ot);
     }
     

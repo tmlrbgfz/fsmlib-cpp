@@ -19,7 +19,7 @@ public:
 	Create an empty input trace, with only one presentation layer
 	@param presentationLayer The presentation layer used by the trace
 	*/
-	InputTrace(const std::shared_ptr<FsmPresentationLayer> presentationLayer);
+	InputTrace(std::unique_ptr<FsmPresentationLayer> &&presentationLayer);
 
 	/**
 	Create an input trace
@@ -27,7 +27,7 @@ public:
 	@param presentationLayer The presentation layer used by the trace
 	*/
 	InputTrace(const std::vector<int>& trace,
-               const std::shared_ptr<FsmPresentationLayer> presentationLayer);
+               std::unique_ptr<FsmPresentationLayer> &&presentationLayer);
 
 	/**
 	Output the InputTrace to a standard output stream

@@ -1270,14 +1270,14 @@ static void generateTestSuite() {
             if ( dfsm != nullptr ) {
                 IOListContainer iolc = dfsm->wMethod(numAddStates);
                 for ( auto const &inVec : iolc.getIOLists() ) {
-                    shared_ptr<InputTrace> itrc = make_shared<InputTrace>(inVec,pl);
+                    shared_ptr<InputTrace> itrc = make_shared<InputTrace>(inVec,pl->clone());
                     testSuite->push_back(dfsm->apply(*itrc));
                 }
             }
             else {
                 IOListContainer iolc = fsm->wMethod(numAddStates);
                 for ( auto const &inVec : iolc.getIOLists() ) {
-                    shared_ptr<InputTrace> itrc = make_shared<InputTrace>(inVec,pl);
+                    shared_ptr<InputTrace> itrc = make_shared<InputTrace>(inVec,pl->clone());
                     testSuite->push_back(fsm->apply(*itrc));
                 }
             }
@@ -1287,14 +1287,14 @@ static void generateTestSuite() {
             if ( dfsm != nullptr ) {
                 IOListContainer iolc = dfsm->wpMethod(numAddStates);
                 for ( auto const &inVec : iolc.getIOLists() ) {
-                    shared_ptr<InputTrace> itrc = make_shared<InputTrace>(inVec,pl);
+                    shared_ptr<InputTrace> itrc = make_shared<InputTrace>(inVec,pl->clone());
                     testSuite->push_back(dfsm->apply(*itrc));
                 }
             }
             else {
                 IOListContainer iolc = fsm->wpMethod(numAddStates);
                 for ( auto const &inVec : iolc.getIOLists() ) {
-                    shared_ptr<InputTrace> itrc = make_shared<InputTrace>(inVec,pl);
+                    shared_ptr<InputTrace> itrc = make_shared<InputTrace>(inVec,pl->clone());
                     testSuite->push_back(fsm->apply(*itrc));
                 }
             }
@@ -1306,7 +1306,7 @@ static void generateTestSuite() {
                 IOListContainer iolc =
                 dfsmMin.hMethodOnMinimisedDfsm(numAddStates);
                 for ( auto const &inVec : iolc.getIOLists() ) {
-                    shared_ptr<InputTrace> itrc = make_shared<InputTrace>(inVec,pl);
+                    shared_ptr<InputTrace> itrc = make_shared<InputTrace>(inVec,pl->clone());
                     testSuite->push_back(dfsm->apply(*itrc));
                 }
             }
@@ -1316,14 +1316,14 @@ static void generateTestSuite() {
             if ( dfsm != nullptr ) {
                 IOListContainer iolc = dfsm->hsiMethod(numAddStates);
                 for ( auto const &inVec : iolc.getIOLists() ) {
-                    shared_ptr<InputTrace> itrc = make_shared<InputTrace>(inVec,pl);
+                    shared_ptr<InputTrace> itrc = make_shared<InputTrace>(inVec,pl->clone());
                     testSuite->push_back(dfsm->apply(*itrc));
                 }
             }
             else {
                 IOListContainer iolc = fsm->hsiMethod(numAddStates);
                 for ( auto const &inVec : iolc.getIOLists() ) {
-                    shared_ptr<InputTrace> itrc = make_shared<InputTrace>(inVec,pl);
+                    shared_ptr<InputTrace> itrc = make_shared<InputTrace>(inVec,pl->clone());
                     testSuite->push_back(fsm->apply(*itrc));
                 }
             }

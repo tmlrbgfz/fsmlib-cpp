@@ -1160,7 +1160,7 @@ IOTrace Dfsm::applyDet(const InputTrace & i)
     // we return an empty IOTrace
     if (currentNode == nullptr && o.get().empty())
     {
-        return IOTrace(InputTrace(presentationLayer),
+        return IOTrace(InputTrace(presentationLayer->clone()),
                        OutputTrace(presentationLayer));
     }
     
@@ -1182,14 +1182,14 @@ IOTrace Dfsm::applyDet(const InputTrace & i)
         // Iterator pointing BEHIND last obtained output.
         auto olast = ofirst + o.get().size();
         
-        return IOTrace(InputTrace(vector<int>(ifirst, ilast), presentationLayer),
+        return IOTrace(InputTrace(vector<int>(ifirst, ilast), presentationLayer->clone()),
                        OutputTrace(vector<int>(ofirst, olast), presentationLayer));
         
     }
     
     // The full input trace has been processed by the DFSM.
     // The associated outputs are contained in o.
-    return IOTrace(InputTrace(i.get(), presentationLayer),
+    return IOTrace(InputTrace(i.get(), presentationLayer->clone()),
                    OutputTrace(o.get(), presentationLayer));
     
 }
@@ -1387,7 +1387,7 @@ InputTrace Dfsm::calcDistinguishingTraceInTree(
     /* initialize queue */
     for (auto const &e : currentNode->getChildren())
     {
-        shared_ptr<InputTrace> itrc = make_shared<InputTrace>(presentationLayer);
+        shared_ptr<InputTrace> itrc = make_shared<InputTrace>(presentationLayer->clone());
         itrc->add(e->getIO());
         q1.push_back(itrc);
     }
@@ -1407,7 +1407,7 @@ InputTrace Dfsm::calcDistinguishingTraceInTree(
 
         for (auto const &ne : currentNode->getChildren())
         {
-            shared_ptr<InputTrace> itrcTmp = make_shared<InputTrace>(itrc->get(), presentationLayer);
+            shared_ptr<InputTrace> itrcTmp = make_shared<InputTrace>(itrc->get(), presentationLayer->clone());
             vector<int>nItrc;
             nItrc.push_back(ne->getIO());
             itrcTmp->append(nItrc);
@@ -1415,7 +1415,7 @@ InputTrace Dfsm::calcDistinguishingTraceInTree(
         }
     }
     // Return empty trace: no distinguishing trace found in tree
-    return InputTrace(presentationLayer);
+    return InputTrace(presentationLayer->clone());
 }
 
 InputTrace Dfsm::calcDistinguishingTraceInTree(const shared_ptr<InputTrace> alpha, const shared_ptr<InputTrace> beta, const shared_ptr<Tree> tree)
@@ -1434,7 +1434,7 @@ InputTrace Dfsm::calcDistinguishingTraceAfterTree(
     vector<TreeNode*> leaves = tree->getLeaves();
     for(TreeNode const *leaf : leaves)
     {
-        shared_ptr<InputTrace> itrc = make_shared<InputTrace>(leaf->getPath(), presentationLayer);
+        shared_ptr<InputTrace> itrc = make_shared<InputTrace>(leaf->getPath(), presentationLayer->clone());
         shared_ptr<FsmNode> s_i_after_input = *(s_i->after(*itrc)).begin();
         shared_ptr<FsmNode> s_j_after_input = *(s_j->after(*itrc)).begin();
         
@@ -1455,7 +1455,7 @@ InputTrace Dfsm::calcDistinguishingTraceAfterTree(
     
     // Return empty trace: could not find a tree extension
     // distinguishing s_i and s_j
-    return InputTrace(presentationLayer);
+    return InputTrace(presentationLayer->clone());
 }
 
 IOListContainer Dfsm::hMethodOnMinimisedDfsm(const unsigned int numAddStates) {
@@ -1493,12 +1493,12 @@ IOListContainer Dfsm::hMethodOnMinimisedDfsm(const unsigned int numAddStates) {
     for ( size_t i = 0; i < iolV.size(); i++ ) {
         
         shared_ptr<InputTrace> alpha =
-        make_shared<InputTrace>(iolV.at(i),presentationLayer);
+        make_shared<InputTrace>(iolV.at(i),presentationLayer->clone());
 
         for ( size_t j = i+1; j < iolV.size(); j++ ) {
             
             shared_ptr<InputTrace> beta =
-            make_shared<InputTrace>(iolV.at(j),presentationLayer);
+            make_shared<InputTrace>(iolV.at(j),presentationLayer->clone());
 
             std::unique_ptr<Tree> alphaTree = iTree->getSubTree(alpha.get());
             std::unique_ptr<Tree> betaTree = iTree->getSubTree(beta.get());
@@ -1506,10 +1506,10 @@ IOListContainer Dfsm::hMethodOnMinimisedDfsm(const unsigned int numAddStates) {
 
             InputTrace gamma = calcDistinguishingTrace(alpha, beta, prefixRelationTree);
 
-            shared_ptr<InputTrace> iAlphaGamma = make_shared<InputTrace>(alpha->get(), presentationLayer);
+            shared_ptr<InputTrace> iAlphaGamma = make_shared<InputTrace>(alpha->get(), presentationLayer->clone());
             iAlphaGamma->append(gamma.get());
 
-            shared_ptr<InputTrace> iBetaGamma = make_shared<InputTrace>(beta->get(), presentationLayer);
+            shared_ptr<InputTrace> iBetaGamma = make_shared<InputTrace>(beta->get(), presentationLayer->clone());
             iBetaGamma->append(gamma.get());
 
             iTree->addToRoot(iAlphaGamma->get());
@@ -1536,7 +1536,7 @@ IOListContainer Dfsm::hMethodOnMinimisedDfsm(const unsigned int numAddStates) {
         for (const auto &alpha : iolV ) {
             
             shared_ptr<InputTrace> iAlphaBeta =
-                make_shared<InputTrace>(alpha,presentationLayer);
+                make_shared<InputTrace>(alpha,presentationLayer->clone());
             iAlphaBeta->append(beta);
             unordered_set<shared_ptr<FsmNode>>
                 s_alpha_betaSet = s0->after(*iAlphaBeta);
@@ -1544,7 +1544,7 @@ IOListContainer Dfsm::hMethodOnMinimisedDfsm(const unsigned int numAddStates) {
             
             for ( auto omega : iolV ) {
                 shared_ptr<InputTrace>
-                    iOmega = make_shared<InputTrace>(omega,presentationLayer);
+                    iOmega = make_shared<InputTrace>(omega,presentationLayer->clone());
                 unordered_set<shared_ptr<FsmNode>>
                     s_omegaSet = s0->after(*iOmega);
                 shared_ptr<FsmNode> s_omega = *s_omegaSet.begin();
@@ -1557,10 +1557,10 @@ IOListContainer Dfsm::hMethodOnMinimisedDfsm(const unsigned int numAddStates) {
 
                 InputTrace gamma = calcDistinguishingTrace(iAlphaBeta, iOmega, prefixRelationTree);
 
-                shared_ptr<InputTrace> iAlphaBetaGamma = make_shared<InputTrace>(iAlphaBeta->get(), presentationLayer);
+                shared_ptr<InputTrace> iAlphaBetaGamma = make_shared<InputTrace>(iAlphaBeta->get(), presentationLayer->clone());
                 iAlphaBetaGamma->append(gamma.get());
 
-                shared_ptr<InputTrace> iOmegaGamma = make_shared<InputTrace>(iOmega->get(), presentationLayer);
+                shared_ptr<InputTrace> iOmegaGamma = make_shared<InputTrace>(iOmega->get(), presentationLayer->clone());
                 iOmegaGamma->append(gamma.get());
 
                 iTree->addToRoot(iAlphaBetaGamma->get());
@@ -1582,13 +1582,13 @@ IOListContainer Dfsm::hMethodOnMinimisedDfsm(const unsigned int numAddStates) {
     for ( auto alpha : iolV ) {
         
         shared_ptr<InputTrace> iAlpha =
-            make_shared<InputTrace>(alpha,presentationLayer);
+            make_shared<InputTrace>(alpha,presentationLayer->clone());
         
         for ( auto beta : inputEnum.getIOLists() ) {
         
             for ( size_t i = 0; i < beta.size() - 1; i++ ) {
                 
-                shared_ptr<InputTrace> iBeta_1 = make_shared<InputTrace>(presentationLayer);
+                shared_ptr<InputTrace> iBeta_1 = make_shared<InputTrace>(presentationLayer->clone());
                 for ( size_t k = 0; k <= i; k++ ) {
                     iBeta_1->add(beta[k]);
                 }
@@ -1596,17 +1596,17 @@ IOListContainer Dfsm::hMethodOnMinimisedDfsm(const unsigned int numAddStates) {
                 for ( size_t j = i+1; j < beta.size(); j++ ) {
                     
                     shared_ptr<InputTrace> iBeta_2 =
-                        make_shared<InputTrace>(presentationLayer);
+                        make_shared<InputTrace>(presentationLayer->clone());
                     for ( size_t k = 0; k <= j; k++ ) {
                         iBeta_2->add(beta[k]);
                     }
                     
                     shared_ptr<InputTrace> iAlphaBeta_1 =
-                        make_shared<InputTrace>(alpha,presentationLayer);
+                        make_shared<InputTrace>(alpha,presentationLayer->clone());
                     iAlphaBeta_1->append(iBeta_1->get());
                     
                     shared_ptr<InputTrace> iAlphaBeta_2 =
-                    make_shared<InputTrace>(alpha,presentationLayer);
+                    make_shared<InputTrace>(alpha,presentationLayer->clone());
                     iAlphaBeta_2->append(iBeta_2->get());
                     
                     unordered_set<shared_ptr<FsmNode>> s1Set =
@@ -1625,10 +1625,10 @@ IOListContainer Dfsm::hMethodOnMinimisedDfsm(const unsigned int numAddStates) {
 
                     InputTrace gamma = calcDistinguishingTrace(iAlphaBeta_1, iAlphaBeta_2, prefixRelationTree);
 
-                    shared_ptr<InputTrace> iAlphaBeta_1Gamma = make_shared<InputTrace>(iAlphaBeta_1->get(), presentationLayer);
+                    shared_ptr<InputTrace> iAlphaBeta_1Gamma = make_shared<InputTrace>(iAlphaBeta_1->get(), presentationLayer->clone());
                     iAlphaBeta_1Gamma->append(gamma.get());
 
-                    shared_ptr<InputTrace> iAlphaBeta_2Gamma = make_shared<InputTrace>(iAlphaBeta_2->get(), presentationLayer);
+                    shared_ptr<InputTrace> iAlphaBeta_2Gamma = make_shared<InputTrace>(iAlphaBeta_2->get(), presentationLayer->clone());
                     iAlphaBeta_2Gamma->append(gamma.get());
 
                     iTree->addToRoot(iAlphaBeta_1Gamma->get());
