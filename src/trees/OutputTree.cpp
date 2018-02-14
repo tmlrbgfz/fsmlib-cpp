@@ -84,7 +84,7 @@ std::vector<IOTrace> OutputTree::toIOTrace() const {
     IOListContainer::IOListBaseType lli = getIOLists().getIOLists();
 	std::vector<IOTrace> result;
     for (vector<int> const &lst : lli) {
-        OutputTrace otrc(lst,std::shared_ptr<FsmPresentationLayer>(presentationLayer->clone().release()));
+        OutputTrace otrc(lst,presentationLayer->clone());
         IOTrace iotrc(inputTrace,otrc);
         result.push_back(iotrc);
     }

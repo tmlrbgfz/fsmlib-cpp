@@ -1145,7 +1145,7 @@ IOListContainer Dfsm::getCharacterisationSet()
 
 IOTrace Dfsm::applyDet(const InputTrace & i)
 {
-    OutputTrace o = OutputTrace(presentationLayer);
+    OutputTrace o = OutputTrace(presentationLayer->clone());
     
     shared_ptr<FsmNode> currentNode = nodes.at(initStateIdx);
     
@@ -1161,7 +1161,7 @@ IOTrace Dfsm::applyDet(const InputTrace & i)
     if (currentNode == nullptr && o.get().empty())
     {
         return IOTrace(InputTrace(presentationLayer->clone()),
-                       OutputTrace(presentationLayer));
+                       OutputTrace(presentationLayer->clone()));
     }
     
     // Handle the case where only a prefix of the input trace
@@ -1183,14 +1183,14 @@ IOTrace Dfsm::applyDet(const InputTrace & i)
         auto olast = ofirst + o.get().size();
         
         return IOTrace(InputTrace(vector<int>(ifirst, ilast), presentationLayer->clone()),
-                       OutputTrace(vector<int>(ofirst, olast), presentationLayer));
+                       OutputTrace(vector<int>(ofirst, olast), presentationLayer->clone()));
         
     }
     
     // The full input trace has been processed by the DFSM.
     // The associated outputs are contained in o.
     return IOTrace(InputTrace(i.get(), presentationLayer->clone()),
-                   OutputTrace(o.get(), presentationLayer));
+                   OutputTrace(o.get(), presentationLayer->clone()));
     
 }
 

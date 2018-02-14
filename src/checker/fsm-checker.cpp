@@ -211,7 +211,7 @@ static void executeTestCase(const char* tcId, char* line) {
     
     
     InputTrace inTrace(inVec,pl->clone());
-    OutputTrace outTrace(outVec,pl);
+    OutputTrace outTrace(outVec,pl->clone());
     
     IOTrace io(inTrace,outTrace);
     

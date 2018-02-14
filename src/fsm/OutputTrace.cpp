@@ -5,14 +5,14 @@
  */
 #include "fsm/OutputTrace.h"
 
-OutputTrace::OutputTrace(const std::shared_ptr<FsmPresentationLayer> presentationLayer)
-	: Trace(presentationLayer->clone())
+OutputTrace::OutputTrace(std::unique_ptr<FsmPresentationLayer> &&presentationLayer)
+	: Trace(std::move(presentationLayer))
 {
 
 }
 
-OutputTrace::OutputTrace(const std::vector<int>& trace, const std::shared_ptr<FsmPresentationLayer> presentationLayer)
-	: Trace(trace, presentationLayer->clone())
+OutputTrace::OutputTrace(const std::vector<int>& trace, std::unique_ptr<FsmPresentationLayer> &&presentationLayer)
+	: Trace(trace, std::move(presentationLayer))
 {
 
 }

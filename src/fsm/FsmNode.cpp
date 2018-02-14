@@ -381,8 +381,8 @@ InputTrace FsmNode::calcDistinguishingTrace(const shared_ptr<FsmNode> otherNode,
     bool foundLast = false;
     for (int x = 0; x <= maxInput; ++ x) {
         
-        OutputTrace oti = OutputTrace(presentationLayer);
-        OutputTrace otj = OutputTrace(presentationLayer);
+        OutputTrace oti = OutputTrace(presentationLayer->clone());
+        OutputTrace otj = OutputTrace(presentationLayer->clone());
         qi->apply(x, oti);
         qj->apply(x, otj);
         if (oti.get().front() != otj.get().front())
