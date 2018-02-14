@@ -17,13 +17,13 @@
 #include "trees/TreeNode.h"
 #include "fsm/SegmentedTrace.h"
 
-class Tree : public std::enable_shared_from_this<Tree>
+class Tree 
 {
 protected:
 	/**
 	The root of this tree
 	*/
-	std::shared_ptr<TreeNode> root;
+	std::unique_ptr<TreeNode> root;
 
 	/**
 	The list of the leaves of this tree (empty, unless you call calcleaves)
@@ -33,7 +33,7 @@ protected:
 	/**
 	The presentation layer used by this tree
 	*/
-	const std::shared_ptr<FsmPresentationLayer> presentationLayer;
+	const std::unique_ptr<FsmPresentationLayer> presentationLayer;
 
 	/**
 	 * Calculate the leaves of the tree, calling calcLeaves on the root of the tree
@@ -41,8 +41,8 @@ protected:
 	void calcLeaves();
 
 	//TODO
-	void remove(const std::shared_ptr<TreeNode> thisNode,
-                const std::shared_ptr<TreeNode> otherNode);
+	void remove(TreeNode *thisNode,
+                TreeNode const *otherNode);
 
 	/**
 	Print every childran of this tree to a dot format into a standard output stream
@@ -50,20 +50,32 @@ protected:
 	@param top The root of the tree
 	@param idNode The id of this node, used to differenciate node in dot format
 	*/
-	void printChildren(std::ostream & out, const std::shared_ptr<TreeNode> top, const std::shared_ptr<int> idNode) const;
+	void printChildren(std::ostream & out, TreeNode const *top, int &idNode) const;
 
     /**
      *  @return true if one of the input traces is prefix of the other one, false otherwise.
      */
-    bool inPrefixRelation(std::vector<int> aPath, std::vector<int> bPath);
+    bool inPrefixRelation(std::vector<int> aPath, std::vector<int> bPath) const;
 public:
 	/**
 	Create a new tree, with a root and a presentation layer
 	@param root  root of the tree
 	@param presentationLayer The presentation layer to use
 	*/
-	Tree(const std::shared_ptr<TreeNode> root,
-         const std::shared_ptr<FsmPresentationLayer> presentationLayer);
+	Tree(std::unique_ptr<TreeNode> &&root,
+         std::unique_ptr<FsmPresentationLayer> &&presentationLayer);
+
+	/**
+	Create a new tree, with a root and a presentation layer
+	@param root  root of the tree
+	@param presentationLayer The presentation layer to use
+	*/
+	Tree(std::unique_ptr<FsmPresentationLayer> &&presentationLayer);
+
+	Tree(Tree const &other);
+	Tree(Tree &&other) = default;
+
+	std::unique_ptr<Tree> clone() const;
 
 	/**
 	Calculate the leaves, then give the leaves back
@@ -75,7 +87,7 @@ public:
 	Getter for the root of this tree
 	@return The root of this tree
 	*/
-	std::shared_ptr<TreeNode> getRoot() const;
+	TreeNode *getRoot() const;
 
 	/**
      * Get vector of all I/O lists in the tree.
@@ -96,7 +108,7 @@ public:
      * @return vector of I/O lists, each list again represented
      *         as a vector.
      */
-    IOListContainer getIOListsWithPrefixes();
+    IOListContainer getIOListsWithPrefixes() const;
 
 	/**
 	Special remove operation.
@@ -104,13 +116,13 @@ public:
 	an edge in this tree, the corresponding source
 	node and target node in this tree are marked as deleted.
 	*/
-	void remove(const std::shared_ptr<Tree> otherTree);
+	void remove(Tree const *otherTree);
 
 	/**
 	Output this tree to a dot format, into a standard output stream
 	@param out The standard output stream to use
 	*/
-	void toDot(std::ostream & out);
+	void toDot(std::ostream & out) const;
 
 	/**
 	Get the test cases of this tree
@@ -142,13 +154,13 @@ public:
 	Construct the union of this Tree and otherTree by adding
 	every maximal input trace of otherTree to this inputTree.
 	*/
-	void unionTree(const std::shared_ptr<Tree> otherTree);
+	void unionTree(Tree *otherTree);
 
 	//TODO
 	void addAfter(const InputTrace & tr, const IOListContainer & cnt);
     
     /** Return number of nodes in the tree */
-    size_t size();
+    size_t size() const;
 
     /**
      *  Construct a pseudo-intersection tree of this Tree and b.
@@ -163,7 +175,7 @@ public:
      *           the resulting tree.
      *  @return Tree
      */
-    std::shared_ptr<Tree> getPrefixRelationTree(const std::shared_ptr<Tree> &b);
+    std::unique_ptr<Tree> getPrefixRelationTree(Tree *b);
     
     /**
      * create a deep copy of a subtree that is reached by alpha
@@ -171,12 +183,12 @@ public:
      * @return Tree subtree with after-alpha as the new root node
      *         or null if no tree node could be found after applying alpha
      */
-    std::shared_ptr<Tree> getSubTree(const std::shared_ptr<InputTrace> alpha);
+    std::unique_ptr<Tree> getSubTree(InputTrace const *alpha) const;
     
     /**
      *  return te TreeNode where the subtree after input trace alpha starts
      */
-    std::shared_ptr<TreeNode> getSubTree(std::shared_ptr< std::vector<int> > alpha);
+    TreeNode *getSubTree(std::vector<int> const *alpha) const;
     
     
     /**
@@ -192,7 +204,7 @@ public:
      *   @return 2 If adding alpha will create a new branch in the tree,
      *             leading to an additional test case.
      */
-    int tentativeAddToRoot(const std::vector<int>& alpha);
+    int tentativeAddToRoot(const std::vector<int>& alpha) const;
     int tentativeAddToRoot(SegmentedTrace& alpha) const;
 
 };

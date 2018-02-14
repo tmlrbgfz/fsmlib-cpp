@@ -1081,7 +1081,7 @@ IOListContainer Dfsm::getCharacterisationSet()
 #endif
     
     /*Create an empty characterisation set as an empty InputTree instance*/
-    characterisationSet = make_shared<Tree>(make_shared<TreeNode>(), presentationLayer);
+    characterisationSet = make_shared<Tree>(presentationLayer->clone());
     
     /*Loop over all non-equal pairs of states. If they are not already distinguished by
      the input sequences contained in w, create a new input traces that distinguishes them
@@ -1241,7 +1241,7 @@ IOListContainer Dfsm::wpMethodOnMinimisedDfsm(const unsigned int numAddStates)
 
     shared_ptr<Tree> tcov = getTransitionCover();
 
-    tcov->remove(scov);
+    tcov->remove(scov.get());
     const shared_ptr<Tree> &r = tcov;
 
     IOListContainer w = getCharacterisationSet();
@@ -1271,7 +1271,7 @@ IOListContainer Dfsm::wpMethodOnMinimisedDfsm(const unsigned int numAddStates)
     }
     appendStateIdentificationSets(Wp2);
 
-    Wp1->unionTree(Wp2);
+    Wp1->unionTree(Wp2.get());
     return Wp1->getIOLists();
 }
 
@@ -1356,7 +1356,7 @@ vector<int> Dfsm::calcDistinguishingTrace(shared_ptr<SegmentedTrace> alpha,
     shared_ptr<FsmNode> s1 = alpha->getTgtNode();
     shared_ptr<FsmNode> s2 = beta->getTgtNode();
     
-    shared_ptr<Tree> tree = make_shared<Tree>(treeNode,presentationLayer);
+    shared_ptr<Tree> tree = make_shared<Tree>(treeNode->clone(),presentationLayer->clone());
     
     InputTrace gamma = calcDistinguishingTraceInTree(s1, s2, tree);
     if (!gamma.get().empty())
@@ -1380,8 +1380,8 @@ InputTrace Dfsm::calcDistinguishingTraceInTree(
         const shared_ptr<FsmNode> s_j,
         const shared_ptr<Tree> tree)
 {
-    shared_ptr<TreeNode> root = tree->getRoot();
-    TreeNode *currentNode = root.get();
+    TreeNode *root = tree->getRoot();
+    TreeNode *currentNode = root;
     deque<shared_ptr<InputTrace>> q1;
 
     /* initialize queue */
@@ -1500,9 +1500,9 @@ IOListContainer Dfsm::hMethodOnMinimisedDfsm(const unsigned int numAddStates) {
             shared_ptr<InputTrace> beta =
             make_shared<InputTrace>(iolV->at(j),presentationLayer);
 
-            shared_ptr<Tree> alphaTree = iTree->getSubTree(alpha);
-            shared_ptr<Tree> betaTree = iTree->getSubTree(beta);
-            shared_ptr<Tree> prefixRelationTree = alphaTree->getPrefixRelationTree(betaTree);
+            std::unique_ptr<Tree> alphaTree = iTree->getSubTree(alpha.get());
+            std::unique_ptr<Tree> betaTree = iTree->getSubTree(beta.get());
+            std::shared_ptr<Tree> prefixRelationTree = std::shared_ptr<Tree>(alphaTree->getPrefixRelationTree(betaTree.get()).release());
 
             InputTrace gamma = calcDistinguishingTrace(alpha, beta, prefixRelationTree);
 
@@ -1551,9 +1551,9 @@ IOListContainer Dfsm::hMethodOnMinimisedDfsm(const unsigned int numAddStates) {
 
                 if ( s_alpha_beta == s_omega ) continue;
 
-                shared_ptr<Tree> alphaBetaTree = iTree->getSubTree(iAlphaBeta);
-                shared_ptr<Tree> trAfterOmega = iTree->getSubTree(iOmega);
-                shared_ptr<Tree> prefixRelationTree = alphaBetaTree->getPrefixRelationTree(trAfterOmega);
+                shared_ptr<Tree> alphaBetaTree = iTree->getSubTree(iAlphaBeta.get());
+                shared_ptr<Tree> trAfterOmega = iTree->getSubTree(iOmega.get());
+                shared_ptr<Tree> prefixRelationTree = alphaBetaTree->getPrefixRelationTree(trAfterOmega.get());
 
                 InputTrace gamma = calcDistinguishingTrace(iAlphaBeta, iOmega, prefixRelationTree);
 
@@ -1619,9 +1619,9 @@ IOListContainer Dfsm::hMethodOnMinimisedDfsm(const unsigned int numAddStates) {
                     
                     if ( s1 == s2 ) continue;
 
-                    shared_ptr<Tree> afterAlphaBeta1Tree = iTree->getSubTree(iAlphaBeta_1);
-                    shared_ptr<Tree> afterAlphaBeta2Tree = iTree->getSubTree(iAlphaBeta_2);
-                    shared_ptr<Tree> prefixRelationTree = afterAlphaBeta1Tree->getPrefixRelationTree(afterAlphaBeta2Tree);
+                    shared_ptr<Tree> afterAlphaBeta1Tree = iTree->getSubTree(iAlphaBeta_1.get());
+                    shared_ptr<Tree> afterAlphaBeta2Tree = iTree->getSubTree(iAlphaBeta_2.get());
+                    shared_ptr<Tree> prefixRelationTree = afterAlphaBeta1Tree->getPrefixRelationTree(afterAlphaBeta2Tree.get());
 
                     InputTrace gamma = calcDistinguishingTrace(iAlphaBeta_1, iAlphaBeta_2, prefixRelationTree);
 

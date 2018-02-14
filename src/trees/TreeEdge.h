@@ -21,19 +21,21 @@ private:
 	/**
 	The target of this tree edge
 	*/
-	std::shared_ptr<TreeNode> target;
+	std::unique_ptr<TreeNode> target;
 public:
 	/**
 	Create a new tree edge
 	@param io The input or output of this tree edge
 	@param target The target of this tree edge
 	*/
-	TreeEdge(const int io, const std::shared_ptr<TreeNode> target);
+	TreeEdge(const int io, std::unique_ptr<TreeNode> &&target);
+
+	TreeEdge(TreeEdge const &other);
 
     /**
      * Create and return a copy of this Edge
      */
-    std::shared_ptr<TreeEdge> clone();
+    std::unique_ptr<TreeEdge> clone();
 	/**
 	Getter for the input or ouput
 	@return The input or output of this tree edge
@@ -44,6 +46,6 @@ public:
 	Getter for the target
 	@return The target of this tree edge
 	*/
-	std::shared_ptr<TreeNode> getTarget() const;
+	TreeNode * getTarget() const;
 };
 #endif //FSM_TREES_TREEEDGE_H_

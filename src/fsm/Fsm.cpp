@@ -575,7 +575,7 @@ shared_ptr<Tree> Fsm::getStateCover()
     unordered_map<shared_ptr<FsmNode>, TreeNode*> f2t;
     
     TreeNode *root = new TreeNode();
-    shared_ptr<Tree> scov = make_shared<Tree>(std::shared_ptr<TreeNode>(root), presentationLayer);
+    shared_ptr<Tree> scov = make_shared<Tree>(std::unique_ptr<TreeNode>(root), presentationLayer->clone());
     
     shared_ptr<FsmNode> initState = getInitialState();
     initState->setColor(FsmNode::grey);
@@ -865,7 +865,7 @@ void Fsm::minimiseCharSet(const shared_ptr<Tree> w)
         IOListContainer wcntNew = IOListContainer(wcnt);
         wcnt.getIOLists()->erase(wcnt.getIOLists()->begin() + i);
         
-        shared_ptr<Tree> itr = make_shared<Tree>(make_shared<TreeNode>(), presentationLayer);
+        shared_ptr<Tree> itr = make_shared<Tree>(presentationLayer->clone());
         itr->addToRoot(wcntNew);
         if (isCharSet(itr))
         {
@@ -899,7 +899,7 @@ IOListContainer Fsm::getCharacterisationSet()
     minimise();
     
     /*Create an empty characterisation set as an empty InputTree instance*/
-    shared_ptr<Tree> w = make_shared<Tree>(make_shared<TreeNode>(), presentationLayer);
+    shared_ptr<Tree> w = make_shared<Tree>(presentationLayer->clone());
     
     /*Loop over all non-equal pairs of states.
      Calculate the state identification sets.*/
@@ -1017,7 +1017,7 @@ void Fsm::calcStateIdentificationSets()
         HittingSet hs = HittingSet(iLst);
         unordered_set<int> h = hs.calcMinCardHittingSet();
         
-        shared_ptr<Tree> iTree = make_shared<Tree>(make_shared<TreeNode>(), presentationLayer);
+        shared_ptr<Tree> iTree = make_shared<Tree>(presentationLayer->clone());
         for (int u : h)
         {
             vector<int> lli = wLst->at(u);
@@ -1109,7 +1109,7 @@ void Fsm::calcStateIdentificationSetsFast()
     
     
     for (size_t i = 0; i < size(); ++ i) {
-        shared_ptr<Tree> iTree = make_shared<Tree>(make_shared<TreeNode>(), presentationLayer);
+        shared_ptr<Tree> iTree = make_shared<Tree>(presentationLayer->clone());
         iTree->addToRoot(*node2iolc.at(i));
         stateIdentificationSets.push_back(iTree);
     }
@@ -1187,7 +1187,7 @@ IOListContainer Fsm::wpMethod(const unsigned int numAddStates)
     
     shared_ptr<Tree> tcov = getTransitionCover();
     
-    tcov->remove(scov);
+    tcov->remove(scov.get());
     shared_ptr<Tree> r = tcov;
     
     IOListContainer w = getCharacterisationSet();
@@ -1217,7 +1217,7 @@ IOListContainer Fsm::wpMethod(const unsigned int numAddStates)
     }
     appendStateIdentificationSets(Wp2);
 
-    Wp1->unionTree(Wp2);
+    Wp1->unionTree(Wp2.get());
     return Wp1->getIOLists();
 }
 
@@ -1247,8 +1247,7 @@ IOListContainer Fsm::hsiMethod(const unsigned int numAddStates)
     std::vector<shared_ptr<Tree>> hwiTrees;
     for (unsigned i = 0; i < nodes.size(); i++)
     {
-        shared_ptr<TreeNode> root = make_shared<TreeNode>();
-        shared_ptr<Tree> emptyTree = make_shared<Tree>(root, presentationLayer);
+        shared_ptr<Tree> emptyTree = make_shared<Tree>(presentationLayer->clone());
         hwiTrees.push_back(emptyTree);
     }
 

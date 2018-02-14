@@ -29,8 +29,8 @@ private:
 	 * @param idInput The current id of the input trace, incremented each time you go deeper in the tree
 	 */
 	void printChildrenOutput(std::ostream& out,
-                             const std::shared_ptr<TreeNode> top,
-                             const std::shared_ptr<int> idNode,
+                             TreeNode const *top,
+                             int &idNode,
                              const int idInput) const;
     
 public:
@@ -40,9 +40,23 @@ public:
 	 * @param inputTrace The inputTrace of this output tree (one input trace, maybe more than one output possible)
 	 * @param presentationLayer The presentation layer to use
 	*/
-	OutputTree(const std::shared_ptr<TreeNode> root,
-               const InputTrace& inputTrace,
-               const std::shared_ptr<FsmPresentationLayer> presentationLayer);
+	OutputTree(std::unique_ptr<TreeNode> &&root,
+               InputTrace const &inputTrace,
+               std::unique_ptr<FsmPresentationLayer> &&presentationLayer);
+
+	/**
+	 * Create a new OutputTree
+	 * @param root The root of the output tree
+	 * @param inputTrace The inputTrace of this output tree (one input trace, maybe more than one output possible)
+	 * @param presentationLayer The presentation layer to use
+	*/
+	OutputTree(InputTrace const &inputTrace,
+               std::unique_ptr<FsmPresentationLayer> &&presentationLayer);
+
+	OutputTree(OutputTree const &other) = default;
+	OutputTree(OutputTree &&other) = default;
+
+	std::unique_ptr<OutputTree> clone() const;
 
     InputTrace getInputTrace() const;
 

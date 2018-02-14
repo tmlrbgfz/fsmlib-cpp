@@ -123,7 +123,7 @@ OutputTree FsmNode::apply(const InputTrace& itrc, bool markAsVisited)
     unordered_map<TreeNode*, shared_ptr<FsmNode>> t2f;
     
     TreeNode *root = new TreeNode();
-    OutputTree ot = OutputTree(std::shared_ptr<TreeNode>(root), itrc, presentationLayer);
+    OutputTree ot = OutputTree(std::unique_ptr<TreeNode>(root), itrc, presentationLayer->clone());
     
     if (itrc.get().size() == 0)
     {
@@ -157,7 +157,7 @@ OutputTree FsmNode::apply(const InputTrace& itrc, bool markAsVisited)
                     int y = tr->getLabel()->getOutput();
                     shared_ptr<FsmNode> tgtState = tr->getTarget();
                     TreeNode *tgtNode = new TreeNode();
-                    std::unique_ptr<TreeEdge> te { new TreeEdge(y, std::shared_ptr<TreeNode>(tgtNode)) };
+                    std::unique_ptr<TreeEdge> te { new TreeEdge(y, std::unique_ptr<TreeNode>(tgtNode)) };
                     thisTreeNode->add(std::move(te));
                     t2f[tgtNode] = tgtState;
                     if ( markAsVisited ) tgtState->setVisited();

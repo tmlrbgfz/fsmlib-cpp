@@ -6,17 +6,18 @@
 #include "trees/TreeEdge.h"
 #include "trees/TreeNode.h"
 
-TreeEdge::TreeEdge(const int io, const std::shared_ptr<TreeNode> target)
-	: io(io), target(target)
+TreeEdge::TreeEdge(const int io, std::unique_ptr<TreeNode> &&target)
+	: io(io), target(std::move(target))
 {
 
 }
 
-std::shared_ptr<TreeEdge> TreeEdge::clone()
-{
-    auto targetClone = target->clone().release();
-    std::shared_ptr<TreeEdge> clone = std::make_shared<TreeEdge>(io, std::shared_ptr<TreeNode>(targetClone));
-    return clone;
+TreeEdge::TreeEdge(TreeEdge const &other)
+    : io(other.io), target(other.target->clone()) {
+}
+
+std::unique_ptr<TreeEdge> TreeEdge::clone() {
+    return std::unique_ptr<TreeEdge>( new TreeEdge(*this) );
 }
 
 int TreeEdge::getIO() const
@@ -24,7 +25,7 @@ int TreeEdge::getIO() const
 	return io;
 }
 
-std::shared_ptr<TreeNode> TreeEdge::getTarget() const
+TreeNode * TreeEdge::getTarget() const
 {
-	return target;
+	return target.get();
 }

@@ -11,15 +11,18 @@ TreeNode::TreeNode()
 : parent(nullptr), deleted(false) {
 }
 
-std::unique_ptr<TreeNode> TreeNode::clone() const {
-    std::unique_ptr<TreeNode> clone { new TreeNode() };
-    clone->getChildren().reserve(children.size());
-    
-    for (const auto& c : children) {
-        clone->getChildren().emplace_back(c->clone().get());
-        clone->getChildren().back()->getTarget()->setParent(clone.get());
+TreeNode::TreeNode(TreeNode const &other) {
+    children.reserve(other.children.size());
+
+    for(auto const &child : other.children) {
+        children.emplace_back(child->clone());
+        children.back()->getTarget()->setParent(this);
     }
-    return clone;
+    parent = nullptr;
+}
+
+std::unique_ptr<TreeNode> TreeNode::clone() const {
+    return std::unique_ptr<TreeNode>(new TreeNode(*this));
 }
 
 void TreeNode::setParent(TreeNode *pparent) {
@@ -80,7 +83,7 @@ std::vector<std::unique_ptr<TreeEdge>> & TreeNode::getChildren()
 
 void TreeNode::remove(TreeNode const *node) {
     auto edgeToRemove = std::find_if(children.begin(), children.end(), [node](std::unique_ptr<TreeEdge> const &edge){
-        return edge->getTarget().get() == node;
+        return edge->getTarget() == node;
     });
     children.erase(edgeToRemove);
 }
@@ -106,7 +109,7 @@ bool TreeNode::isLeaf() const {
 
 int TreeNode::getIO(TreeNode const *node) const {
     auto edge = std::find_if(children.begin(), children.end(), [node](std::unique_ptr<TreeEdge> const &child){
-        return child->getTarget().get() == node;
+        return child->getTarget() == node;
     });
     if(edge != children.end()) {
         return (*edge)->getIO();
@@ -162,7 +165,7 @@ bool TreeNode::superTreeOf(TreeNode const *otherNode) const
         {
             if (y == eMine->getIO())
             {
-                if (!eMine->getTarget()->superTreeOf(eOther->getTarget().get()))
+                if (!eMine->getTarget()->superTreeOf(eOther->getTarget()))
                 {
                     return false;
                 }
@@ -227,7 +230,7 @@ bool operator==(TreeNode const & treeNode1, TreeNode const & treeNode2)
 TreeNode *TreeNode::add(const int x) {
     for (auto &e : children) {
         if (e->getIO() == x) {
-            return e->getTarget().get();
+            return e->getTarget();
         }
     }
     
@@ -255,7 +258,7 @@ void TreeNode::add(vector<int>::const_iterator lstIte, const vector<int>::const_
         if (e->getIO() == x)
         {
             /*We do not need to extend the tree, but follow the existing edge*/
-            TreeNode *nTgt = e->getTarget().get();
+            TreeNode *nTgt = e->getTarget();
             nTgt->add(lstIte, end);
             return;
         }
@@ -275,7 +278,7 @@ void TreeNode::add(const IOListContainer & tcl)
     /*First delegate the work to the children*/
     for (auto &e : getChildren())
     {
-        TreeNode *nTgt = e->getTarget().get();
+        TreeNode *nTgt = e->getTarget();
         nTgt->add(tcl);
     }
     
@@ -338,7 +341,7 @@ int TreeNode::tentativeAddToThisNode(vector<int>::const_iterator start,
     int x = *start;
     for ( auto const &e : children ) {
         if ( e->getIO() == x ) {
-            TreeNode *next = e->getTarget().get();
+            TreeNode *next = e->getTarget();
             return next->tentativeAddToThisNode(++start,stop,n);
         }
     }
@@ -405,7 +408,7 @@ void TreeNode::traverse(vector<int>& v,
     // traverse all edges to child nodes
     for ( auto &e : children ) {
         int io = e->getIO();
-        TreeNode *n = e->getTarget().get();
+        TreeNode *n = e->getTarget();
         v.push_back(io);
         
         n->traverse(v,ioll);

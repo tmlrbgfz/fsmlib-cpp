@@ -8,22 +8,33 @@
 
 using namespace std;
 
-void OutputTree::printChildrenOutput(ostream& out, const shared_ptr<TreeNode> top, const shared_ptr<int> idNode, const int idInput) const
+void OutputTree::printChildrenOutput(ostream& out, TreeNode const *top, int &idNode, const int idInput) const
 {
-	int idNodeBase = *idNode;
+	int idNodeBase = idNode;
 	for (auto const &edge : top->getChildren())
 	{
-		out << idNodeBase << " -> " << ++ *idNode << "[label = \"" << inputTrace.get().at(idInput) << "/" << edge->getIO() << "\" ];" << endl;
+		out << idNodeBase << " -> " << ++ idNode << "[label = \"" << inputTrace.get().at(idInput) << "/" << edge->getIO() << "\" ];" << endl;
 		printChildrenOutput(out, edge->getTarget(), idNode, idInput + 1);
 	}
 }
 
-OutputTree::OutputTree(const shared_ptr<TreeNode> root,
-                       const InputTrace& inputTrace,
-                       const shared_ptr<FsmPresentationLayer> presentationLayer)
-	: Tree(root, presentationLayer), inputTrace(inputTrace)
+OutputTree::OutputTree(std::unique_ptr<TreeNode> &&root,
+                       InputTrace const &inputTrace,
+                       std::unique_ptr<FsmPresentationLayer> &&presentationLayer)
+	: Tree(std::move(root), std::move(presentationLayer)), inputTrace(inputTrace)
 {
 
+}
+
+OutputTree::OutputTree(InputTrace const &inputTrace,
+                       std::unique_ptr<FsmPresentationLayer> &&presentationLayer)
+	: Tree(std::move(presentationLayer)), inputTrace(inputTrace)
+{
+
+}
+
+std::unique_ptr<OutputTree> OutputTree::clone() const {
+	return std::unique_ptr<OutputTree>(new OutputTree(*this));
 }
 
 InputTrace OutputTree::getInputTrace() const
@@ -78,8 +89,8 @@ void OutputTree::toDot(ostream& out) const
 	out << "digraph OutputTree {" << endl;
 	out << "\trankdir=TB;" << endl;//Top -> Bottom, to create a vertical graph
 	out << "\tnode [shape = circle];" << endl;
-	shared_ptr<int> id = make_shared<int>(0);
-	printChildrenOutput(out, root, id, 0);
+	int id = 0;
+	printChildrenOutput(out, root.get(), id, 0);
 	out << "}";
 }
 
@@ -107,7 +118,7 @@ void OutputTree::toIOTrace(vector<IOTrace> &iotrVec) {
     for (vector<int> lst : lli)
     {
         
-        OutputTrace otrc(lst,presentationLayer);
+        OutputTrace otrc(lst,std::shared_ptr<FsmPresentationLayer>(presentationLayer->clone().release()));
         IOTrace iotrc(inputTrace,otrc);
         iotrVec.push_back(iotrc);
         

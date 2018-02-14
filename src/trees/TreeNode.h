@@ -33,14 +33,14 @@ protected:
 	//TODO
 	void add(std::vector<int>::const_iterator lstIte, const std::vector<int>::const_iterator end);
     
-    
 public:
 	/**
 	Create a new tree node
 	*/
 	TreeNode();
-	//No copy constructor. Use clone() instead.
-	TreeNode(TreeNode const &) = delete;
+    
+	TreeNode(TreeNode const &);
+	TreeNode(TreeNode &&other) = default;
 
     /**
      * Create a copy of this TreeNode and all its children

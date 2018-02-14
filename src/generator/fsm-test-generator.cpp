@@ -454,8 +454,7 @@ shared_ptr<Tree> getPrefixRelationTreeWithoutTrace(const shared_ptr<Tree> & a, c
     shared_ptr<vector<vector<int>>> aPrefixes = aIOlst.getIOLists();
     shared_ptr<vector<vector<int>>> bPrefixes = bIOlst.getIOLists();
 
-    shared_ptr<TreeNode> r = make_shared<TreeNode>();
-    shared_ptr<Tree> tree = make_shared<Tree>(r, pl);
+    shared_ptr<Tree> tree = make_shared<Tree>(pl->clone());
 
     if (aPrefixes->at(0).empty() && bPrefixes->at(0).empty())
     {
@@ -969,7 +968,7 @@ static void safeHMethod(const shared_ptr<TestSuite> &testSuite) {
     shared_ptr<FsmPresentationLayer> pl = dfsmRefMin.getPresentationLayer();
     
     // Create an empty test suite as a tree of input traces
-    shared_ptr<Tree> testSuiteTree = make_shared<Tree>(make_shared<TreeNode>(),pl);
+    shared_ptr<Tree> testSuiteTree = make_shared<Tree>(pl->clone());
     
     shared_ptr<Tree> V = dfsmRefMin.getStateCover();
     
@@ -1178,7 +1177,7 @@ static void safeWpMethod(const shared_ptr<TestSuite> &testSuite) {
                                                     pl);
         W22->add(inputEnum);
         W22->add(wSafe);
-        W2->unionTree(W22);
+        W2->unionTree(W22.get());
     }
     
     // Calc W3 = V.Sigma_I^(m - n + 1) oplus
@@ -1194,8 +1193,8 @@ static void safeWpMethod(const shared_ptr<TestSuite> &testSuite) {
     
     // Union of all test cases: W1 union W2 union W3
     // Collected again in W1
-    W1->unionTree(W2);
-    W1->unionTree(W3);
+    W1->unionTree(W2.get());
+    W1->unionTree(W3.get());
     
     IOListContainer iolc = W1->getTestCases();
     *testSuite = dfsm->createTestSuite(iolc);
@@ -1251,8 +1250,8 @@ static void safeWMethod(const shared_ptr<TestSuite> &testSuite) {
     
     // Union of all test cases: W1 union W2 union W3
     // Collected again in W1
-    W1->unionTree(W21);
-    W1->unionTree(W22);
+    W1->unionTree(W21.get());
+    W1->unionTree(W22.get());
     
     IOListContainer iolc = W1->getTestCases();
     *testSuite = dfsm->createTestSuite(iolc);
