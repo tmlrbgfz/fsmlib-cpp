@@ -14,8 +14,8 @@ TestSuite::TestSuite()
 
 }
 
-bool TestSuite::isEquivalentTo(TestSuite& theOtherTs,
-                               bool writeOutput)
+bool TestSuite::isEquivalentTo(TestSuite const &theOtherTs,
+                               bool writeOutput) const
 {
 	bool pass = true;
 
@@ -46,8 +46,8 @@ bool TestSuite::isEquivalentTo(TestSuite& theOtherTs,
 	return pass;
 }
 
-bool TestSuite::isReductionOf(TestSuite& theOtherTs,
-                              bool writeOutput)
+bool TestSuite::isReductionOf(TestSuite const &theOtherTs,
+                              bool writeOutput) const
 {
 	bool pass = true;
 
@@ -94,7 +94,7 @@ size_t TestSuite::totalLength() const
     size_t length = 0;
     for(unsigned i = 0; i < this->size(); ++i)
     {
-        OutputTree o = this->at(i);
+        OutputTree const &o = this->at(i);
         length += o.getInputTrace().get().size();
     }
     return length;

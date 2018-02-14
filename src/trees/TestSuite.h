@@ -28,8 +28,8 @@ public:
      *        and observed I/O-traces to cout.
 	 * @return true if they are the same, false otherwise
 	 */
-	bool isEquivalentTo(TestSuite& theOtherTs,
-                        bool writeOutput = false);
+	bool isEquivalentTo(TestSuite const &theOtherTs,
+                        bool writeOutput = false) const;
 
 	/**
 	 * Check whether or not this test suite is a reduction of an other one
@@ -39,8 +39,8 @@ public:
      *        and observed I/O-traces to cout.
 	 * @return true if they are the other test suite contain this one, false otherwise
 	*/
-    bool isReductionOf(TestSuite& theOtherTs,
-                       bool writeOutput = false);
+    bool isReductionOf(TestSuite const &theOtherTs,
+                       bool writeOutput = false) const;
     
     
 
