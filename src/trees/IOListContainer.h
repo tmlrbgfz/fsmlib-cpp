@@ -14,16 +14,19 @@
 
 class IOListContainer
 {
+public:
+    typedef std::vector<std::vector<int>> IOListBaseType;
+    typedef IOListBaseType::size_type size_type;
 private:
     /**
      * The input list of this test cases
      */
-    std::shared_ptr<std::vector<std::vector<int>>> iolLst;
+    IOListBaseType iolLst;
     
     /**
      * The presentation layer used by this test cases
      */
-    const std::shared_ptr<FsmPresentationLayer> presentationLayer;
+    std::unique_ptr<FsmPresentationLayer> presentationLayer;
     
     /**
      * Check whether or not it is the last list
@@ -49,7 +52,7 @@ public:
      * @param iolLst The list of input traces
      * @param presentationLayer The presentation layer to use
      */
-    IOListContainer(const std::shared_ptr<std::vector<std::vector<int>>> iolLst, const std::shared_ptr<FsmPresentationLayer> presentationLayer);
+    IOListContainer(IOListBaseType const &iolLst, std::unique_ptr<FsmPresentationLayer> &&presentationLayer);
     
     /**
      * Create an IOListContainer with input traces from length minLength
@@ -64,16 +67,17 @@ public:
     IOListContainer(const int maxInput,
                     const int minLength,
                     const int maxLength,
-                    const std::shared_ptr<FsmPresentationLayer> presentationLayer);
+                    std::unique_ptr<FsmPresentationLayer> &&presentationLayer);
     
-    IOListContainer(const std::shared_ptr<FsmPresentationLayer>
-                        presentationLayer);
+    IOListContainer(std::unique_ptr<FsmPresentationLayer> &&presentationLayer);
+
+    IOListContainer(IOListContainer const &other);
     
     /**
      * Getter for the input list
      * @return The input list
      */
-    std::shared_ptr<std::vector<std::vector<int>>> getIOLists() const;
+    IOListBaseType & getIOLists();
     
     /**
      * Add a new trace to the IOListContainer
@@ -85,7 +89,7 @@ public:
      * Getter for the size of the IOListContainer
      * @return The size of the IOListContainer
      */
-    int size() const;
+    size_type size() const;
     
     /**
      * Output the IOListContainer to a standard output stream

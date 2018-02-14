@@ -21,7 +21,6 @@
 
 
 using namespace std;
-using namespace std::chrono;
 
 shared_ptr<FsmNode> Fsm::newNode(const int id, const shared_ptr<pair<shared_ptr<FsmNode>, shared_ptr<FsmNode>>> p,
                                  shared_ptr<FsmPresentationLayer> pl)
@@ -612,16 +611,16 @@ shared_ptr<Tree> Fsm::getTransitionCover()
     shared_ptr<Tree> scov = getStateCover();
     resetColor();
     
-    shared_ptr<vector<vector<int>>> tlst = make_shared<vector<vector<int>>>();
+    IOListContainer::IOListBaseType tlst;
     
     for (int x = 0; x <= maxInput; ++ x)
     {
         vector<int> l;
         l.push_back(x);
-        tlst->push_back(l);
+        tlst.push_back(l);
     }
     
-    IOListContainer tcl = IOListContainer(tlst, presentationLayer);
+    IOListContainer tcl = IOListContainer(tlst, presentationLayer->clone());
     
     scov->add(tcl);
     
@@ -860,10 +859,10 @@ void Fsm::minimiseCharSet(const shared_ptr<Tree> w)
         return;
     }
     
-    for (unsigned int i = 0; i < wcnt.getIOLists()->size(); ++ i)
+    for (unsigned int i = 0; i < wcnt.getIOLists().size(); ++ i)
     {
         IOListContainer wcntNew = IOListContainer(wcnt);
-        wcnt.getIOLists()->erase(wcnt.getIOLists()->begin() + i);
+        wcnt.getIOLists().erase(wcnt.getIOLists().begin() + i);
         
         shared_ptr<Tree> itr = make_shared<Tree>(presentationLayer->clone());
         itr->addToRoot(wcntNew);
@@ -925,9 +924,9 @@ IOListContainer Fsm::getCharacterisationSet()
                                                              ofsmTableLst,
                                                              maxInput,
                                                              maxOutput);
-            shared_ptr<vector<vector<int>>> lli = make_shared<vector<vector<int>>>();
-            lli->push_back(i.get());
-            IOListContainer tcli = IOListContainer(lli, presentationLayer);
+            IOListContainer::IOListBaseType lli;
+            lli.push_back(i.get());
+            IOListContainer tcli = IOListContainer(lli, presentationLayer->clone());
             
             /*Insert this also into w*/
             w->addToRoot(tcli);
@@ -963,7 +962,7 @@ void Fsm::calcStateIdentificationSets()
     
     /*Identify W by integers 0..m*/
     IOListContainer wIC = characterisationSet->getIOLists();
-    shared_ptr<vector<vector<int>>> wLst = wIC.getIOLists();
+    IOListContainer::IOListBaseType wLst = wIC.getIOLists();
     
     /*wLst.get(0) is identified with Integer(0),
      wLst.get(1) is identified with Integer(1), ...*/
@@ -986,9 +985,9 @@ void Fsm::calcStateIdentificationSets()
         {
             shared_ptr<FsmNode> jNode = nodes.at(j);
             
-            for (unsigned int u = 0; u < wLst->size(); ++ u)
+            for (unsigned int u = 0; u < wLst.size(); ++ u)
             {
-                vector<int> thisTrace = wLst->at(u);
+                vector<int> thisTrace = wLst.at(u);
                 
                 if (iNode->distinguished(jNode, thisTrace))
                 {
@@ -1020,10 +1019,10 @@ void Fsm::calcStateIdentificationSets()
         shared_ptr<Tree> iTree = make_shared<Tree>(presentationLayer->clone());
         for (int u : h)
         {
-            vector<int> lli = wLst->at(u);
-            shared_ptr<vector<vector<int>>> lllli = make_shared<vector<vector<int>>>();
-            lllli->push_back(lli);
-            iTree->addToRoot(IOListContainer(lllli, presentationLayer));
+            vector<int> lli = wLst.at(u);
+            IOListContainer::IOListBaseType lllli;
+            lllli.push_back(lli);
+            iTree->addToRoot(IOListContainer(lllli, presentationLayer->clone()));
         }
         stateIdentificationSets.push_back(iTree);
         
@@ -1059,7 +1058,7 @@ void Fsm::calcStateIdentificationSetsFast()
     
     /*Identify W by integers 0..m*/
     IOListContainer wIC = characterisationSet->getIOLists();
-    shared_ptr<vector<vector<int>>> wLst = wIC.getIOLists();
+    IOListContainer::IOListBaseType wLst = wIC.getIOLists();
     
     // Matrix indexed over nodes
     vector< vector<int> > distinguish;
@@ -1069,7 +1068,7 @@ void Fsm::calcStateIdentificationSetsFast()
     vector< shared_ptr<IOListContainer> > node2iolc;
     
     for (size_t i = 0; i < size(); ++ i) {
-        node2iolc.push_back(make_shared<IOListContainer>(presentationLayer));
+        node2iolc.push_back(make_shared<IOListContainer>(presentationLayer->clone()));
         vector<int> v;
         distinguish.push_back(v);
         for (size_t j = 0; j < size(); j++ ) {
@@ -1080,7 +1079,7 @@ void Fsm::calcStateIdentificationSetsFast()
     for (size_t i = 0; i < size(); ++ i) {
         
         int traceIdx = 0;
-        for (auto trc : *wLst) {
+        for (auto trc : wLst) {
             
             bool complete = true;
             for ( size_t j = i+1; j < size(); j++ ) {
@@ -1128,7 +1127,7 @@ void Fsm::appendStateIdentificationSets(const shared_ptr<Tree> Wp2) const
 {
     IOListContainer cnt = Wp2->getIOLists();
     
-    for (vector<int> lli : *cnt.getIOLists())
+    for (vector<int> lli : cnt.getIOLists())
     {
         InputTrace itrc = InputTrace(lli, presentationLayer);
         
@@ -1168,7 +1167,7 @@ IOListContainer Fsm::wMethodOnMinimisedFsm(const unsigned int numAddStates) {
         IOListContainer inputEnum = IOListContainer(maxInput,
                                                     1,
                                                     (int)numAddStates,
-                                                    presentationLayer);
+                                                    presentationLayer->clone());
         iTree->add(inputEnum);
     }
     
@@ -1199,7 +1198,7 @@ IOListContainer Fsm::wpMethod(const unsigned int numAddStates)
     {
         IOListContainer inputEnum = IOListContainer(maxInput, 1,
                                                     (int)numAddStates,
-                                                    presentationLayer);
+                                                    presentationLayer->clone());
         
         Wp1->add(inputEnum);
     }
@@ -1211,7 +1210,7 @@ IOListContainer Fsm::wpMethod(const unsigned int numAddStates)
         IOListContainer inputEnum = IOListContainer(maxInput,
                                                     (int)numAddStates,
                                                     (int)numAddStates,
-                                                    presentationLayer);
+                                                    presentationLayer->clone());
         
         Wp2->add(inputEnum);
     }
@@ -1240,7 +1239,7 @@ IOListContainer Fsm::hsiMethod(const unsigned int numAddStates)
     IOListContainer inputEnum = IOListContainer(maxInput,
                                                     1,
                                                     (int)numAddStates + 1,
-                                                    presentationLayer);
+                                                    presentationLayer->clone());
     hsi->add(inputEnum);
 
     /* initialize HWi trees */
@@ -1263,7 +1262,7 @@ IOListContainer Fsm::hsiMethod(const unsigned int numAddStates)
         {
             shared_ptr<FsmNode>node2 = nodes[j];
             bool distinguished = false;
-            for (auto iolst : *wSet.getIOLists())
+            for (auto iolst : wSet.getIOLists())
             {
                 if (node1->distinguished(node2, iolst)){
                     distinguished = true;
@@ -1280,7 +1279,7 @@ IOListContainer Fsm::hsiMethod(const unsigned int numAddStates)
 
     /* Append harmonised state identification sets */
     IOListContainer cnt = hsi->getIOLists();
-    for (auto lli : *cnt.getIOLists())
+    for (auto lli : cnt.getIOLists())
     {
         InputTrace itrc = InputTrace(lli, presentationLayer);
 
@@ -1304,14 +1303,14 @@ IOListContainer Fsm::hsiMethod(const unsigned int numAddStates)
     return hsi->getIOLists();
 }
 
-TestSuite Fsm::createTestSuite(const IOListContainer & testCases)
+TestSuite Fsm::createTestSuite(IOListContainer testCases)
 {
-    shared_ptr<vector<vector<int>>> tcLst = testCases.getIOLists();
+    IOListContainer::IOListBaseType tcLst = testCases.getIOLists();
     TestSuite theSuite;
     
-    for (unsigned int i = 0; i < tcLst->size(); ++ i)
+    for (unsigned int i = 0; i < tcLst.size(); ++ i)
     {
-        OutputTree ot = apply(InputTrace(tcLst->at(i), presentationLayer));
+        OutputTree ot = apply(InputTrace(tcLst.at(i), presentationLayer));
         theSuite.push_back(ot);
     }
     
@@ -1399,7 +1398,7 @@ ostream & operator<<(ostream & out, const Fsm & fsm)
 unsigned int Fsm::getRandomSeed() {
     
     return static_cast<unsigned int>
-    (high_resolution_clock::now().time_since_epoch().count());
+    (std::chrono::high_resolution_clock::now().time_since_epoch().count());
     
 }
 

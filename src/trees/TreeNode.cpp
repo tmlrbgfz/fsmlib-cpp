@@ -273,19 +273,17 @@ void TreeNode::add(vector<int>::const_iterator lstIte, const vector<int>::const_
     newNode->add(lstIte, end);
 }
 
-void TreeNode::add(const IOListContainer & tcl)
+void TreeNode::add(IOListContainer tcl)
 {
     /*First delegate the work to the children*/
-    for (auto &e : getChildren())
-    {
+    for (auto &e : getChildren()) {
         TreeNode *nTgt = e->getTarget();
         nTgt->add(tcl);
     }
     
     /*Now append each input sequence in tcl to this node,
      using the special strategy of the add(lstIte) operation*/
-    for (vector<int>& lst : *tcl.getIOLists())
-    {
+    for (vector<int>& lst : tcl.getIOLists()) {
         add(lst.cbegin(), lst.cend());
     }
 }
@@ -353,11 +351,11 @@ int TreeNode::tentativeAddToThisNode(vector<int>::const_iterator start,
 
 
 
-void TreeNode::addToThisNode(const IOListContainer& tcl)
+void TreeNode::addToThisNode(IOListContainer tcl)
 {
     /*Append each input sequence in tcl to this node,
      using the special strategy of the add(lstIte) operation*/
-    for (vector<int>& lst : *tcl.getIOLists())
+    for (vector<int> const &lst : tcl.getIOLists())
     {
         add(lst.cbegin(), lst.cend());
     }

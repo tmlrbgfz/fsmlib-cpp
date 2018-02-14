@@ -4,59 +4,30 @@
  * Licensed under the EUPL V.1.1
  */
 #include "trees/IOListContainer.h"
-
-bool IOListContainer::isLastLst(const int maxInput, const std::vector<int>& lst) const
-{
-	for (auto it = lst.cbegin(); it != lst.cend(); ++ it)
-	{
-		if (*it < maxInput)
-		{
-			return false;
-		}
-	}
-	return true;
-}
+#include <numeric>
 
 std::vector<int> IOListContainer::nextLst(const int maxInput, const std::vector<int>& lst) const
 {
-	std::vector<int> nextl;
-	if (isLastLst(maxInput, lst))
-	{
-		return nextl;
+	std::vector<int> returnValue = lst;
+	auto lastNotMax = std::find_if(returnValue.rbegin(), returnValue.rend(), [maxInput](int const &element)->bool{
+		return element < maxInput;
+	});
+	if(lastNotMax == returnValue.rend()) {
+		return {};
 	}
-
-	/*We know that at least one input element in lst can still be incremented.
-	Its successors must be set to zero. Beware, it is a descending iterator*/
-	for (auto it = lst.rbegin(); it != lst.rend(); ++ it)
-	{
-		if (*it == maxInput)
-		{
-			nextl.insert(nextl.begin(), 0);
-		}
-		else
-		{
-			/*Insert the incremented value at this place into nextl*/
-			nextl.insert(nextl.begin(), (*it) + 1);
-
-			/*Now copy the remaining values from lst into nextl*/
-			while (++ it != lst.rend())
-			{
-				nextl.insert(nextl.begin(), *it);
-			}
-			return nextl;
-		}
-	}
-	return nextl;
+	std::fill(returnValue.rbegin(), lastNotMax, 0);
+	++(*lastNotMax);
+	return returnValue;
 }
 
-IOListContainer::IOListContainer(const std::shared_ptr<std::vector<std::vector<int>>> iolLst, const std::shared_ptr<FsmPresentationLayer> presentationLayer)
-	: iolLst(iolLst), presentationLayer(presentationLayer)
+IOListContainer::IOListContainer(IOListBaseType const &iolLst, std::unique_ptr<FsmPresentationLayer> &&presentationLayer)
+	: iolLst(iolLst), presentationLayer(std::move(presentationLayer))
 {
 
 }
 
-IOListContainer::IOListContainer(const int maxInput, const int minLength, const int maxLenght, const std::shared_ptr<FsmPresentationLayer> presentationLayer)
-	: iolLst(std::make_shared<std::vector<std::vector<int>>>()), presentationLayer(presentationLayer)
+IOListContainer::IOListContainer(const int maxInput, const int minLength, const int maxLenght, std::unique_ptr<FsmPresentationLayer> &&presentationLayer)
+	: presentationLayer(std::move(presentationLayer))
 {
 	for (int len = minLength; len <= maxLenght; ++ len)
 	{
@@ -66,67 +37,63 @@ IOListContainer::IOListContainer(const int maxInput, const int minLength, const 
 		{
 			lst.push_back(0);
 		}
-		iolLst->push_back(lst);
+		iolLst.push_back(lst);
 
 		for (lst = nextLst(maxInput, lst); !lst.empty(); lst = nextLst(maxInput, lst))
 		{
-			iolLst->push_back(lst);
+			iolLst.push_back(lst);
 		}
 	}
 }
 
-IOListContainer::IOListContainer(const std::shared_ptr<FsmPresentationLayer>
-                                 pl)
-: iolLst(std::make_shared<std::vector<std::vector<int>>>()),
-    presentationLayer(pl) {
-    
+IOListContainer::IOListContainer(std::unique_ptr<FsmPresentationLayer> &&pl)
+: presentationLayer(std::move(pl)) {
 }
 
-std::shared_ptr<std::vector<std::vector<int>>> IOListContainer::getIOLists() const
-{
+IOListContainer::IOListContainer(IOListContainer const &other)
+: iolLst(other.iolLst), presentationLayer(other.presentationLayer->clone()) {
+}
+
+IOListContainer::IOListBaseType & IOListContainer::getIOLists() {
 	return iolLst;
 }
 
 void IOListContainer::add(const Trace & trc)
 {
-	iolLst->push_back(trc.get());
+	iolLst.push_back(trc.get());
 }
 
-int IOListContainer::size() const
+IOListContainer::size_type IOListContainer::size() const
 {
-	return static_cast<int> (iolLst->size());
+	return iolLst.size();
 }
 
 std::ostream & operator<<(std::ostream & out, const IOListContainer & ot)
 {
 	out << "{ ";
 
-	bool isFirst = true;
-	for (std::vector<int>& iLst : *ot.iolLst)
-	{
-		if (!isFirst)
-		{
-			out << "," << std::endl << "  ";
-		}
+	auto concatenateWithSeparator = [](std::string const &value, const std::string &separator, std::string const &concat)->std::string{
+		return value + separator + concat;
+	};
+	auto commaSep = std::bind(concatenateWithSeparator, std::placeholders::_1, ",\n  ", std::placeholders::_2);
+	auto dotSep = std::bind(concatenateWithSeparator, std::placeholders::_1, ".", std::placeholders::_2);
 
-		for (unsigned int i = 0; i < iLst.size(); ++ i)
-		{
-			if (i > 0)
-			{
-				out << ".";
+	auto translateList = [&ot,&dotSep](IOListContainer::IOListBaseType::value_type const &list)->std::string {
+		auto translator = [&ot](IOListContainer::IOListBaseType::value_type::value_type const &value)->std::string {
+			if(value == -1) {
+				return "eps";
 			}
-
-			if (iLst.at(i) == -1)
-			{
-				out << "eps";
-			}
-			else
-			{
-				out << ot.presentationLayer->getInId(iLst.at(i));
-			}
-		}
-		isFirst = false;
-	}
+			return ot.presentationLayer->getInId(value);
+		};
+		std::vector<std::string> translatedVector;
+		translatedVector.reserve(list.size());
+		std::transform(list.begin(), list.end(), std::back_inserter(translatedVector), translator);
+		return std::accumulate(translatedVector.begin() + 1, translatedVector.end(), translatedVector.front(), dotSep);
+	};
+	std::vector<std::string> translatedLists;
+	translatedLists.reserve(ot.iolLst.size());
+	std::transform(ot.iolLst.begin(), ot.iolLst.end(), std::back_inserter(translatedLists), translateList);
+	out << std::accumulate(translatedLists.begin() + 1, translatedLists.end(), translatedLists.front(), commaSep);
 	out << " }";
 	return out;
 }

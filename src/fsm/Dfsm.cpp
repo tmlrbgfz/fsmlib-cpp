@@ -1103,9 +1103,9 @@ IOListContainer Dfsm::getCharacterisationSet()
              input traces contained in w. This step is performed
              according to Gill's algorithm.*/
             InputTrace i = leftNode->calcDistinguishingTrace(rightNode, pktblLst, maxInput);
-            shared_ptr<vector<vector<int>>> lli = make_shared<vector<vector<int>>>();
-            lli->push_back(i.get());
-            IOListContainer tcli = IOListContainer(lli, presentationLayer);
+            IOListContainer::IOListBaseType lli;
+            lli.push_back(i.get());
+            IOListContainer tcli = IOListContainer(lli, presentationLayer->clone());
             characterisationSet->addToRoot(tcli);
             
 #if 0
@@ -1220,7 +1220,7 @@ IOListContainer Dfsm::wMethodOnMinimisedDfsm(const unsigned int numAddStates)
         IOListContainer inputEnum = IOListContainer(maxInput,
                                                     1,
                                                     (int)numAddStates,
-                                                    presentationLayer);
+                                                    presentationLayer->clone());
         iTree->add(inputEnum);
     }
     
@@ -1253,7 +1253,7 @@ IOListContainer Dfsm::wpMethodOnMinimisedDfsm(const unsigned int numAddStates)
     {
         IOListContainer inputEnum = IOListContainer(maxInput, 1,
                                                     (int)numAddStates,
-                                                    presentationLayer);
+                                                    presentationLayer->clone());
 
         Wp1->add(inputEnum);
     }
@@ -1265,7 +1265,7 @@ IOListContainer Dfsm::wpMethodOnMinimisedDfsm(const unsigned int numAddStates)
         IOListContainer inputEnum = IOListContainer(maxInput,
                                                     (int)numAddStates,
                                                     (int)numAddStates,
-                                                    presentationLayer);
+                                                    presentationLayer->clone());
 
         Wp2->add(inputEnum);
     }
@@ -1477,7 +1477,7 @@ IOListContainer Dfsm::hMethodOnMinimisedDfsm(const unsigned int numAddStates) {
     IOListContainer inputEnum = IOListContainer(maxInput,
                                                 (int)numAddStates+1,
                                                 (int)numAddStates+1,
-                                                presentationLayer);
+                                                presentationLayer->clone());
     
     // Initial test suite set is V.Sigma^{m-n+1}, m-n = numAddStates
     iTree->add(inputEnum);
@@ -1488,17 +1488,17 @@ IOListContainer Dfsm::hMethodOnMinimisedDfsm(const unsigned int numAddStates) {
     // (if alpha.gamma or beta.gamma are already in iTree, addition
     // will not lead to a new test case)
     IOListContainer iolcV = V->getIOListsWithPrefixes();
-    shared_ptr<vector<vector<int>>> iolV = iolcV.getIOLists();
+    IOListContainer::IOListBaseType iolV = iolcV.getIOLists();
     
-    for ( size_t i = 0; i < iolV->size(); i++ ) {
+    for ( size_t i = 0; i < iolV.size(); i++ ) {
         
         shared_ptr<InputTrace> alpha =
-        make_shared<InputTrace>(iolV->at(i),presentationLayer);
+        make_shared<InputTrace>(iolV.at(i),presentationLayer);
 
-        for ( size_t j = i+1; j < iolV->size(); j++ ) {
+        for ( size_t j = i+1; j < iolV.size(); j++ ) {
             
             shared_ptr<InputTrace> beta =
-            make_shared<InputTrace>(iolV->at(j),presentationLayer);
+            make_shared<InputTrace>(iolV.at(j),presentationLayer);
 
             std::unique_ptr<Tree> alphaTree = iTree->getSubTree(alpha.get());
             std::unique_ptr<Tree> betaTree = iTree->getSubTree(beta.get());
@@ -1527,13 +1527,13 @@ IOListContainer Dfsm::hMethodOnMinimisedDfsm(const unsigned int numAddStates) {
     IOListContainer allBeta = IOListContainer(maxInput,
                                               1,
                                               (int)numAddStates+1,
-                                              presentationLayer);
+                                              presentationLayer->clone());
     
-    shared_ptr<vector<vector<int>>> iolAllBeta = allBeta.getIOLists();
+    IOListContainer::IOListBaseType iolAllBeta = allBeta.getIOLists();
     
-    for (const auto &beta : *iolAllBeta ) {
+    for (const auto &beta : iolAllBeta ) {
         
-        for (const auto &alpha : *iolV ) {
+        for (const auto &alpha : iolV ) {
             
             shared_ptr<InputTrace> iAlphaBeta =
                 make_shared<InputTrace>(alpha,presentationLayer);
@@ -1542,7 +1542,7 @@ IOListContainer Dfsm::hMethodOnMinimisedDfsm(const unsigned int numAddStates) {
                 s_alpha_betaSet = s0->after(*iAlphaBeta);
             shared_ptr<FsmNode> s_alpha_beta = *s_alpha_betaSet.begin();
             
-            for ( auto omega : *iolV ) {
+            for ( auto omega : iolV ) {
                 shared_ptr<InputTrace>
                     iOmega = make_shared<InputTrace>(omega,presentationLayer);
                 unordered_set<shared_ptr<FsmNode>>
@@ -1579,12 +1579,12 @@ IOListContainer Dfsm::hMethodOnMinimisedDfsm(const unsigned int numAddStates) {
     // where γ is a distinguishing sequence of states
     // s0-after-alpha.beta1 and s0-after-alpha.beta2.
     
-    for ( auto alpha : *iolV ) {
+    for ( auto alpha : iolV ) {
         
         shared_ptr<InputTrace> iAlpha =
             make_shared<InputTrace>(alpha,presentationLayer);
         
-        for ( auto beta : *inputEnum.getIOLists() ) {
+        for ( auto beta : inputEnum.getIOLists() ) {
         
             for ( size_t i = 0; i < beta.size() - 1; i++ ) {
                 

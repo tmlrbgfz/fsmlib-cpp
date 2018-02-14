@@ -426,7 +426,7 @@ public:
      *  They can also be checked with respect to a reduction relationship
      *  by using the isReductionOf() method defined for TestSuite instances.
      */
-    TestSuite createTestSuite(const IOListContainer & testCases);
+    TestSuite createTestSuite(IOListContainer testCases);
     
     /**
      *  Identify equivalent inputs for completely specified FSMs.

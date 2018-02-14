@@ -93,31 +93,31 @@ TreeNode* Tree::getSubTree( std::vector<int> const *alpha) const {
 
 IOListContainer Tree::getIOLists()
 {
-    std::shared_ptr<std::vector<std::vector<int>>> ioll = std::make_shared<std::vector<std::vector<int>>>();
+    IOListContainer::IOListBaseType ioll;
 	calcLeaves();
 
 	for (TreeNode *n : leaves)
 	{
-		ioll->push_back(n->getPath());
+		ioll.push_back(n->getPath());
 	}
 
-	return IOListContainer(ioll, std::shared_ptr<FsmPresentationLayer>(presentationLayer->clone().release()));
+	return IOListContainer(ioll, presentationLayer->clone());
 }
 
 
 
 IOListContainer Tree::getIOListsWithPrefixes() const
 {
-    std::shared_ptr<std::vector<std::vector<int>>> ioll = std::make_shared<std::vector<std::vector<int>>>();
+    IOListContainer::IOListBaseType ioll;
     
     // Create empty I/O-list as vector
     std::vector<int> thisVec; 
     
     // Perform in-order traversal of the tree
     // and create all I/O-lists.
-    root->traverse(thisVec, *ioll);
+    root->traverse(thisVec, ioll);
     
-    return IOListContainer(ioll, std::shared_ptr<FsmPresentationLayer>(presentationLayer->clone().release()));
+    return IOListContainer(ioll, presentationLayer->clone());
 }
 
 void Tree::remove(Tree const *otherTree)
@@ -182,26 +182,26 @@ std::unique_ptr<Tree> Tree::getPrefixRelationTree(Tree *b) {
     IOListContainer aIOlst = getIOLists();
     IOListContainer bIOlst = b->getIOLists();
 
-    auto aPrefixes = aIOlst.getIOLists();
-    auto bPrefixes = bIOlst.getIOLists();
+    auto const &aPrefixes = aIOlst.getIOLists();
+    auto const &bPrefixes = bIOlst.getIOLists();
 
     std::unique_ptr<Tree> tree { new Tree(presentationLayer->clone()) };
 
-    if (aPrefixes->at(0).size() == 0 && bPrefixes->at(0).size() == 0) {
+    if (aPrefixes.at(0).size() == 0 && bPrefixes.at(0).size() == 0) {
         return tree;
     }
 
-    if (aPrefixes->at(0).size() == 0) {
+    if (aPrefixes.at(0).size() == 0) {
         return b->clone();
     }
-    if (bPrefixes->at(0).size() == 0) {
+    if (bPrefixes.at(0).size() == 0) {
         return this->clone();
     }
 
 
     TreeNode *root = tree->getRoot();
-    for (auto aPrefix : *aPrefixes) {
-        for (auto bPrefix : *bPrefixes) {
+    for (auto const &aPrefix : aPrefixes) {
+        for (auto const &bPrefix : bPrefixes) {
             if (inPrefixRelation(aPrefix, bPrefix)) {
                 root->addToThisNode(aPrefix);
                 root->addToThisNode(bPrefix);

@@ -238,9 +238,9 @@ void test4() {
         
         
         IOListContainer c = sc->getTestCases();
-        std::shared_ptr<std::vector<std::vector<int>>> iols = c.getIOLists();
+        IOListContainer::IOListBaseType iols = c.getIOLists();
         
-        for ( auto inLst : *iols ) {
+        for ( auto const &inLst : iols ) {
             auto iTr = make_shared<InputTrace>(inLst,pl);
             f->apply(*iTr,true);
         }
@@ -261,7 +261,7 @@ void test4() {
                 fb.close();
                 
                 int iCtr = 0;
-                for ( auto inLst : *iols ) {
+                for ( auto const &inLst : iols ) {
                     ostringstream oss;
                     oss << iCtr++;
                     auto iTr = make_shared<InputTrace>(inLst,pl);
@@ -515,7 +515,7 @@ void test10() {
     
     IOListContainer w = dMin.getCharacterisationSet();
     
-    shared_ptr<std::vector<std::vector<int>>> inLst = w.getIOLists();
+    IOListContainer::IOListBaseType inLst = w.getIOLists();
     
     bool allNodesDistinguished = true;
     for ( size_t n = 0; n < dMin.size(); n++ ) {
@@ -527,7 +527,7 @@ void test10() {
             
             bool areDistinguished = false;
             
-            for ( auto inputs : *inLst ) {
+            for ( auto const &inputs : inLst ) {
                 
                 shared_ptr<InputTrace> itr = make_shared<InputTrace>(inputs,pl);
                 
@@ -584,7 +584,7 @@ void gdc_test1() {
     
     shared_ptr< TestSuite > testSuite =
         make_shared< TestSuite >();
-    for ( auto inVec : *iolc.getIOLists() ) {
+    for ( auto const &inVec : iolc.getIOLists() ) {
         shared_ptr<InputTrace> itrc = make_shared<InputTrace>(inVec,pl);
         testSuite->push_back(gdc->apply(*itrc));
     }
@@ -616,7 +616,7 @@ vector<IOTrace> runAgainstRefModel(shared_ptr<Dfsm> refModel,
     // Register test cases in IO Traces
     vector<IOTrace> iotrLst;
 
-    for ( auto lst : *iolCnt ) {
+    for ( auto const &lst : iolCnt ) {
         
         shared_ptr<InputTrace> itr = make_shared<InputTrace>(lst,pl);
         IOTrace iotr = refModel->applyDet(*itr);

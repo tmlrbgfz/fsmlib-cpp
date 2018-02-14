@@ -451,29 +451,29 @@ shared_ptr<Tree> getPrefixRelationTreeWithoutTrace(const shared_ptr<Tree> & a, c
     IOListContainer aIOlst = a->getIOLists();
     IOListContainer bIOlst = b->getIOLists();
 
-    shared_ptr<vector<vector<int>>> aPrefixes = aIOlst.getIOLists();
-    shared_ptr<vector<vector<int>>> bPrefixes = bIOlst.getIOLists();
+    IOListContainer::IOListBaseType aPrefixes = aIOlst.getIOLists();
+    IOListContainer::IOListBaseType bPrefixes = bIOlst.getIOLists();
 
     shared_ptr<Tree> tree = make_shared<Tree>(pl->clone());
 
-    if (aPrefixes->at(0).empty() && bPrefixes->at(0).empty())
+    if (aPrefixes.at(0).empty() && bPrefixes.at(0).empty())
     {
         return tree;
     }
 
-    if (aPrefixes->at(0).empty())
+    if (aPrefixes.at(0).empty())
     {
         return b;
     }
-    if (bPrefixes->at(0).empty())
+    if (bPrefixes.at(0).empty())
     {
         return a;
     }
 
 
-    for (const auto &aPrefix : *aPrefixes)
+    for (const auto &aPrefix : aPrefixes)
     {
-        for (const auto &bPrefix : *bPrefixes)
+        for (const auto &bPrefix : bPrefixes)
         {
             if (inPrefixRelation(aPrefix, bPrefix))
             {
@@ -976,7 +976,7 @@ static void safeHMethod(const shared_ptr<TestSuite> &testSuite) {
     IOListContainer Vcontainer = V->getIOListsWithPrefixes();
     
     // State cover as vector of vectors
-    shared_ptr< vector< vector<int> > > Vvectors = Vcontainer.getIOLists();
+    IOListContainer::IOListBaseType Vvectors = Vcontainer.getIOLists();
     
     // Empty deque of pointers to segmented traces
     deque< shared_ptr<SegmentedTrace> > Vtraces;
@@ -984,7 +984,7 @@ static void safeHMethod(const shared_ptr<TestSuite> &testSuite) {
     // Fill Vtraces with new instances of segmented traces,
     // each trace consisting of a single segment from V, together
     // with its target node.
-    for ( const auto v : *Vvectors ) {
+    for ( const auto &v : Vvectors ) {
         shared_ptr<FsmNode> tgtNode = *(s0->after(v).begin());
         shared_ptr< vector<int> > vPtr =
             make_shared< vector<int> >(v.begin(),v.end());
@@ -1017,10 +1017,10 @@ static void safeHMethod(const shared_ptr<TestSuite> &testSuite) {
     IOListContainer inputEnum = IOListContainer(dfsmRefMin.getMaxInput(),
                                                 1,
                                                 numAddStates + 1,
-                                                pl);
-    shared_ptr< vector< vector<int> > > inputEnumVec = inputEnum.getIOLists();
+                                                pl->clone());
+    IOListContainer::IOListBaseType inputEnumVec = inputEnum.getIOLists();
     deque< shared_ptr<TraceSegment> > inputEnumDeq;
-    for ( const auto v : *inputEnumVec ) {
+    for ( const auto &v : inputEnumVec ) {
         shared_ptr< vector<int> > vPtr =
             make_shared< vector<int> >(v.begin(),v.end());
         shared_ptr<TraceSegment> seg = make_shared<TraceSegment>(vPtr,
@@ -1174,7 +1174,7 @@ static void safeWpMethod(const shared_ptr<TestSuite> &testSuite) {
         IOListContainer inputEnum = IOListContainer(dfsm->getMaxInput(),
                                                     1,
                                                     numAddStates,
-                                                    pl);
+                                                    pl->clone());
         W22->add(inputEnum);
         W22->add(wSafe);
         W2->unionTree(W22.get());
@@ -1186,7 +1186,7 @@ static void safeWpMethod(const shared_ptr<TestSuite> &testSuite) {
     IOListContainer inputEnum2 = IOListContainer(dfsm->getMaxInput(),
                                                  (numAddStates+1),
                                                  (numAddStates+1),
-                                                 pl);
+                                                 pl->clone());
     W3->add(inputEnum2);
     
     dfsmAbstractionMin.appendStateIdentificationSets(W3);
@@ -1243,7 +1243,7 @@ static void safeWMethod(const shared_ptr<TestSuite> &testSuite) {
     IOListContainer inputEnum = IOListContainer(dfsm->getMaxInput(),
                                                 1,
                                                 numAddStates+1,
-                                                pl);
+                                                pl->clone());
     W22->add(inputEnum);
     
     W22->add(wSafe);
@@ -1269,14 +1269,14 @@ static void generateTestSuite() {
         case WMETHOD:
             if ( dfsm != nullptr ) {
                 IOListContainer iolc = dfsm->wMethod(numAddStates);
-                for ( auto inVec : *iolc.getIOLists() ) {
+                for ( auto const &inVec : iolc.getIOLists() ) {
                     shared_ptr<InputTrace> itrc = make_shared<InputTrace>(inVec,pl);
                     testSuite->push_back(dfsm->apply(*itrc));
                 }
             }
             else {
                 IOListContainer iolc = fsm->wMethod(numAddStates);
-                for ( auto inVec : *iolc.getIOLists() ) {
+                for ( auto const &inVec : iolc.getIOLists() ) {
                     shared_ptr<InputTrace> itrc = make_shared<InputTrace>(inVec,pl);
                     testSuite->push_back(fsm->apply(*itrc));
                 }
@@ -1286,14 +1286,14 @@ static void generateTestSuite() {
         case WPMETHOD:
             if ( dfsm != nullptr ) {
                 IOListContainer iolc = dfsm->wpMethod(numAddStates);
-                for ( auto inVec : *iolc.getIOLists() ) {
+                for ( auto const &inVec : iolc.getIOLists() ) {
                     shared_ptr<InputTrace> itrc = make_shared<InputTrace>(inVec,pl);
                     testSuite->push_back(dfsm->apply(*itrc));
                 }
             }
             else {
                 IOListContainer iolc = fsm->wpMethod(numAddStates);
-                for ( auto inVec : *iolc.getIOLists() ) {
+                for ( auto const &inVec : iolc.getIOLists() ) {
                     shared_ptr<InputTrace> itrc = make_shared<InputTrace>(inVec,pl);
                     testSuite->push_back(fsm->apply(*itrc));
                 }
@@ -1305,7 +1305,7 @@ static void generateTestSuite() {
                 Dfsm dfsmMin = dfsm->minimise();
                 IOListContainer iolc =
                 dfsmMin.hMethodOnMinimisedDfsm(numAddStates);
-                for ( auto inVec : *iolc.getIOLists() ) {
+                for ( auto const &inVec : iolc.getIOLists() ) {
                     shared_ptr<InputTrace> itrc = make_shared<InputTrace>(inVec,pl);
                     testSuite->push_back(dfsm->apply(*itrc));
                 }
@@ -1315,14 +1315,14 @@ static void generateTestSuite() {
         case HSIMETHOD:
             if ( dfsm != nullptr ) {
                 IOListContainer iolc = dfsm->hsiMethod(numAddStates);
-                for ( auto inVec : *iolc.getIOLists() ) {
+                for ( auto const &inVec : iolc.getIOLists() ) {
                     shared_ptr<InputTrace> itrc = make_shared<InputTrace>(inVec,pl);
                     testSuite->push_back(dfsm->apply(*itrc));
                 }
             }
             else {
                 IOListContainer iolc = fsm->hsiMethod(numAddStates);
-                for ( auto inVec : *iolc.getIOLists() ) {
+                for ( auto const &inVec : iolc.getIOLists() ) {
                     shared_ptr<InputTrace> itrc = make_shared<InputTrace>(inVec,pl);
                     testSuite->push_back(fsm->apply(*itrc));
                 }

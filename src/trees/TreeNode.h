@@ -169,14 +169,14 @@ public:
 	add(lstIte) operation
 	@param tcl The IOListContainer to be added
 	*/
-	void add(const IOListContainer & tcl);
+	void add(IOListContainer tcl);
 
 	/**
 	Append each input sequence in tcl to this node,
 	using the special strategy of the add(lstIte) operation
 	@param tcl The IOListContainer to be added
 	*/
-	void addToThisNode(const IOListContainer & tcl);
+	void addToThisNode(IOListContainer tcl);
     void addToThisNode(const std::vector<int> &lst);
     int tentativeAddToThisNode(std::vector<int>::const_iterator start,
                                std::vector<int>::const_iterator stop) const;

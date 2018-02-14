@@ -96,8 +96,8 @@ void OutputTree::toDot(ostream& out) const
 
 void OutputTree::store(std::ofstream& file)
 {
-	vector<vector<int>> lli = *getIOLists().getIOLists();
-	for (vector<int> lst : lli)
+	IOListContainer::IOListBaseType lli = getIOLists().getIOLists();
+	for (vector<int> const &lst : lli)
 	{
 		for (unsigned int i = 0; i < lst.size(); ++ i)
 		{
@@ -114,8 +114,8 @@ void OutputTree::store(std::ofstream& file)
 void OutputTree::toIOTrace(vector<IOTrace> &iotrVec) {
     
     
-    vector<vector<int>> lli = *getIOLists().getIOLists();
-    for (vector<int> lst : lli)
+    IOListContainer::IOListBaseType lli = getIOLists().getIOLists();
+    for (vector<int> const &lst : lli)
     {
         
         OutputTrace otrc(lst,std::shared_ptr<FsmPresentationLayer>(presentationLayer->clone().release()));
@@ -128,8 +128,8 @@ void OutputTree::toIOTrace(vector<IOTrace> &iotrVec) {
 
 ostream& operator<<(ostream& out, OutputTree& ot)
 {
-	vector<vector<int>> lli = *ot.getIOLists().getIOLists();
-	for (vector<int> lst : lli)
+	IOListContainer::IOListBaseType lli = ot.getIOLists().getIOLists();
+	for (vector<int> const &lst : lli)
 	{
 		for (unsigned int i = 0; i < lst.size(); ++ i)
 		{

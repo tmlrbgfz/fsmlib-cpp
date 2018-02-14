@@ -309,9 +309,9 @@ bool FsmNode::distinguished(const shared_ptr<FsmNode> otherNode, const vector<in
 shared_ptr<InputTrace> FsmNode::distinguished(const shared_ptr<FsmNode> otherNode, shared_ptr<Tree> w)
 {
     IOListContainer iolc = w->getIOLists();
-    shared_ptr<vector<vector<int>>> inputLists = iolc.getIOLists();
+    IOListContainer::IOListBaseType inputLists = iolc.getIOLists();
     
-    for (vector<int>& iLst : *inputLists)
+    for (vector<int>& iLst : inputLists)
     {
         if (distinguished(otherNode, iLst))
         {
