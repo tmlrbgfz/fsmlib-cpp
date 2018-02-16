@@ -33,7 +33,7 @@ private:
     /**
      * The presentation layer used by the FSMTable
      */
-    std::shared_ptr<FsmPresentationLayer> presentationLayer;
+    FsmPresentationLayer const *presentationLayer;
 public:
     /**
      * Create a DFSMTable
@@ -41,7 +41,7 @@ public:
      * @param maxInput Maximum Input of the FSM
      * @param presentationLayer The presentation layer used by the DFSM
      */
-    DFSMTable(const int numStates, const int maxInput, std::shared_ptr<FsmPresentationLayer> presentationLayer);
+    DFSMTable(const int numStates, const int maxInput, FsmPresentationLayer const *presentationLayer);
     
     /**
      * Modify a row of the DFSMTable

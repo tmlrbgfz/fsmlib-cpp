@@ -42,7 +42,7 @@ private:
     /**
      * The presentation layer used by the pktable
      */
-    std::shared_ptr<FsmPresentationLayer> presentationLayer;
+    FsmPresentationLayer const *presentationLayer;
 public:
     /**
      * Create an empty Pktable, with each row set to nullptr
@@ -50,7 +50,7 @@ public:
      * @param maxInput The maximal input
      * @param presentationLayer The presentation layer used by the PkTable
      */
-    PkTable(const int numStates, const int maxInput, const std::shared_ptr<FsmPresentationLayer> presentationLayer);
+    PkTable(const int numStates, const int maxInput, FsmPresentationLayer const *presentationLayer);
     
     /**
      * Create a Pktable
@@ -59,7 +59,7 @@ public:
      * @param rows The rows used by the PkTable
      * @param presentationLayer The presentation layer used by the PkTable
      */
-    PkTable(const int numStates, const int maxInput, const std::vector<std::shared_ptr<PkTableRow>> rows, const std::shared_ptr<FsmPresentationLayer> presentationLayer);
+    PkTable(const int numStates, const int maxInput, const std::vector<std::shared_ptr<PkTableRow>> rows, FsmPresentationLayer const *presentationLayer);
     
     /**
      * Set the row of the Pk-equivalence class at the position s

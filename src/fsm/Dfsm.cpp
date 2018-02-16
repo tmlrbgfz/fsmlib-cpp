@@ -137,7 +137,7 @@ shared_ptr<FsmPresentationLayer> Dfsm::createPresentationLayerFromCsvFormat(cons
 
 shared_ptr<FsmPresentationLayer>
 Dfsm::createPresentationLayerFromCsvFormat(const string & fname,
-                                           const shared_ptr<FsmPresentationLayer> pl) {
+                                           FsmPresentationLayer const *pl) {
     
     // key comparator for usage in string sets
     class setCmp
@@ -271,7 +271,7 @@ void Dfsm::createDfsmTransitionGraph(const string& fname) {
     size_t pos;
     size_t posEnd;
     string line;
-    shared_ptr<FsmNode> tgtNode;
+    FsmNode *tgtNode;
     
     // skip first line
     getline(inputFile,line);
@@ -284,13 +284,12 @@ void Dfsm::createDfsmTransitionGraph(const string& fname) {
     int nodeId = 0;
     while (getline(inputFile, line)) {
         
-        currentParsedNode = nodes[nodeId];
+        currentParsedNode = nodes[nodeId].get();
         if ( currentParsedNode == nullptr ) {
-            currentParsedNode =
-            make_shared<FsmNode>(nodeId,
-                                 presentationLayer->getStateId(nodeId,""),
-                                 presentationLayer);
-            nodes[nodeId] = currentParsedNode;
+            currentParsedNode = new FsmNode(nodeId,
+                                            presentationLayer->getStateId(nodeId,""),
+                                            presentationLayer.get());
+            nodes[nodeId].reset(currentParsedNode);
         }
         
         // Skip the first column
@@ -316,11 +315,10 @@ void Dfsm::createDfsmTransitionGraph(const string& fname) {
             tableEntry.erase(tableEntry.find_last_not_of(" \n\r\t\"")+1);
             if ( tableEntry.empty() ) {
                 tgtNode = currentParsedNode;
-                shared_ptr<FsmLabel> lbl =
-                make_shared<FsmLabel>(x,0,presentationLayer.get());
-                shared_ptr<FsmTransition> tr =
-                make_shared<FsmTransition>(currentParsedNode,tgtNode,lbl);
-                currentParsedNode->addTransition(tr);
+                std::unique_ptr<FsmLabel> lbl { new FsmLabel(x,0,presentationLayer.get()) };
+                std::unique_ptr<FsmTransition> tr { new FsmTransition(currentParsedNode,tgtNode,std::move(lbl)) };
+                transitions.push_back(std::move(tr));
+                currentParsedNode->addTransition(tr.get());
             }
             else {
                 
@@ -339,12 +337,12 @@ void Dfsm::createDfsmTransitionGraph(const string& fname) {
                 
                 auto tgtStateId = presentationLayer->state2Num(tgtStateName);
                 if ( static_cast<bool>(tgtStateId) ) {
-                    tgtNode = nodes[tgtStateId.value()];
+                    tgtNode = nodes[tgtStateId.value()].get();
                     if ( tgtNode == nullptr ) {
-                        tgtNode = make_shared<FsmNode>(tgtStateId.value(),
-                                                       tgtStateName,
-                                                       presentationLayer);
-                        nodes[tgtStateId.value()] = tgtNode;
+                        tgtNode = new FsmNode(tgtStateId.value(),
+                                              tgtStateName,
+                                              presentationLayer.get());
+                        nodes[tgtStateId.value()].reset(tgtNode);
                     }
                     // Get the output associated with the current state
                     // and input
@@ -359,11 +357,10 @@ void Dfsm::createDfsmTransitionGraph(const string& fname) {
                     : presentationLayer->out2Num(outStr);
                     
                     if ( static_cast<bool>(y) ) {
-                        shared_ptr<FsmLabel> lbl =
-                        make_shared<FsmLabel>(x,y.value(),presentationLayer.get());
-                        shared_ptr<FsmTransition> tr =
-                        make_shared<FsmTransition>(currentParsedNode,tgtNode,lbl);
-                        currentParsedNode->addTransition(tr);
+                        std::unique_ptr<FsmLabel> lbl { new FsmLabel(x,y.value(),presentationLayer.get()) };
+                        std::unique_ptr<FsmTransition> tr { new FsmTransition(currentParsedNode,tgtNode,std::move(lbl)) };
+                        transitions.push_back(std::move(tr));
+                        currentParsedNode->addTransition(tr.get());
                     }
                     
                 }
@@ -412,17 +409,17 @@ Dfsm::Dfsm(const string & fname,
            const string & fsmName) : Fsm(nullptr)   {
     dfsmTable = nullptr;
     name = fsmName;
-    presentationLayer = createPresentationLayerFromCsvFormat(fname);
+    presentationLayer = createPresentationLayerFromCsvFormat(fname)->clone();
     createDfsmTransitionGraph(fname);
 }
 
 Dfsm::Dfsm(const string & fname,
            const string & fsmName,
-           const shared_ptr<FsmPresentationLayer> pl) : Fsm(nullptr)   {
+           std::unique_ptr<FsmPresentationLayer> &&pl) : Fsm(nullptr)   {
     
     dfsmTable = nullptr;
     name = fsmName;
-    presentationLayer = createPresentationLayerFromCsvFormat(fname,pl);
+    presentationLayer = createPresentationLayerFromCsvFormat(fname,pl.get())->clone();
     createDfsmTransitionGraph(fname);
 }
 
@@ -432,25 +429,26 @@ void Dfsm::createAtRandom()
     
     for (unsigned int i = 0; i < nodes.size(); ++ i)
     {
-        nodes [i] = make_shared<FsmNode>(i, presentationLayer);
+        nodes [i].reset(new FsmNode(i, presentationLayer.get()));
     }
     
     for (unsigned int i = 0; i < nodes.size(); ++ i)
     {
-        shared_ptr<FsmNode> source = nodes.at(i);
+        FsmNode *source = nodes.at(i).get();
         
         for (int input = 0; input <= maxInput; ++ input)
         {
             int nTarget = rand() % nodes.size();
-            shared_ptr<FsmNode> target = nodes.at(nTarget);
+            FsmNode *target = nodes.at(nTarget).get();
             int output = rand() % (maxOutput + 1);
-            shared_ptr<FsmTransition> transition =
-            make_shared<FsmTransition>(source,
-                                       target,
-                                       make_shared<FsmLabel>(input,
-                                                             output,
-                                                             presentationLayer.get()));
-            source->addTransition(transition);
+            std::unique_ptr<FsmTransition> transition { 
+                    new FsmTransition(source,
+                                      target,
+                                      std::unique_ptr<FsmLabel>(new FsmLabel(input,
+                                                                             output,
+                                                                             presentationLayer.get()))) };
+            transitions.push_back(std::move(transition));
+            source->addTransition(transitions.back().get());
         }
     }
 }
@@ -463,7 +461,7 @@ vector<shared_ptr<PkTable> > Dfsm::getPktblLst() const
 shared_ptr<DFSMTable> Dfsm::toDFSMTable() const
 {
     shared_ptr<DFSMTable> tbl
-            = make_shared<DFSMTable>(nodes.size(), maxInput, presentationLayer);
+            = make_shared<DFSMTable>(nodes.size(), maxInput, presentationLayer.get());
     
     for (unsigned int i = 0; i < nodes.size(); ++ i)
     {
@@ -487,26 +485,29 @@ shared_ptr<DFSMTable> Dfsm::toDFSMTable() const
     return tbl;
 }
 
-Dfsm::Dfsm(const string & fname, const string & fsmName, const int maxNodes, const int maxInput, const int maxOutput, const shared_ptr<FsmPresentationLayer> presentationLayer)
-: Fsm(fname, fsmName, maxNodes, maxInput, maxOutput, presentationLayer)
+Dfsm::Dfsm(const string & fname, const string & fsmName, const int maxNodes, const int maxInput, const int maxOutput, std::unique_ptr<FsmPresentationLayer> &&presentationLayer)
+: Fsm(fname, fsmName, maxNodes, maxInput, maxOutput, std::move(presentationLayer))
 {
     dfsmTable = nullptr;
 }
 
 Dfsm::Dfsm(const string& fname,
-           const shared_ptr<FsmPresentationLayer> presentationLayer,
+           std::unique_ptr<FsmPresentationLayer> &&presentationLayer,
            const string & fsmName)
-: Fsm(fname,presentationLayer,fsmName)
+: Fsm(fname,std::move(presentationLayer),fsmName)
 {
     dfsmTable = nullptr;
 }
 
-Dfsm::Dfsm(const string & fsmName, const int maxNodes, const int maxInput, const int maxOutput, const shared_ptr<FsmPresentationLayer> presentationLayer)
-: Fsm(presentationLayer)
+Dfsm::Dfsm(const string & fsmName, const int maxNodes, const int maxInput, const int maxOutput, std::unique_ptr<FsmPresentationLayer> &&presentationLayer)
+: Fsm(std::move(presentationLayer))
 {
     dfsmTable = nullptr;
     name = fsmName;
-    nodes.insert(nodes.end(), maxNodes, nullptr);
+    nodes.reserve(maxNodes);
+    for(int i = 0; i < maxNodes; ++i) {
+        nodes.emplace_back(nullptr);
+    }
     initStateIdx = 0;
     this->maxInput = maxInput;
     this->maxOutput = maxOutput;
@@ -517,22 +518,23 @@ Dfsm::Dfsm(const string & fsmName, const int maxNodes, const int maxInput, const
     out.close();
 }
 
-Dfsm::Dfsm(const string & fsmName, const int maxInput, const int maxOutput, const vector<shared_ptr<FsmNode>> lst, const shared_ptr<FsmPresentationLayer> presentationLayer)
-: Fsm(fsmName, maxInput, maxOutput, lst, presentationLayer)
+Dfsm::Dfsm(const string & fsmName,
+           const int maxInput,
+           const int maxOutput,
+           std::vector<std::unique_ptr<FsmNode>> &&lst,
+           std::vector<std::unique_ptr<FsmTransition>> &&transitions,
+           std::unique_ptr<FsmPresentationLayer> &&presentationLayer)
+: Fsm(fsmName, maxInput, maxOutput, std::move(lst), std::move(transitions), std::move(presentationLayer))
 {
     dfsmTable = nullptr;
 }
 
 Dfsm::Dfsm(const Fsm & fsm)
-: Fsm (fsm.getName(), fsm.getMaxInput(), fsm.getMaxOutput(), fsm.getNodes(), fsm.getPresentationLayer())
+: Fsm (fsm)
 {
     dfsmTable = nullptr;
     initStateIdx = fsm.getInitStateIdx();;
     minimal = isMinimal();
-    /*shared_ptr<FsmNode> currentParsedNode;
-     vector<shared_ptr<OFSMTable>> ofsmTableLst;
-     shared_ptr<Tree> characterisationSet;
-     vector<shared_ptr<Tree>> stateIdentificationSets;*/
 }
 
 
@@ -554,7 +556,7 @@ Fsm()
     Json::Value transitions = fsmExport["transitions"];
     Json::Value requirements = fsmExport["requirements"];
     
-    map< string,shared_ptr<FsmNode> > name2node;
+    map< string,FsmNode* > name2node;
     
     // check JSON value for a valid FSM export
     if (inputs.isNull() || (!inputs.isArray())) {
@@ -623,8 +625,7 @@ Fsm()
     }
     
     // Create the presentation layer
-    presentationLayer =
-    make_shared<FsmPresentationLayer>(in2String,out2String,state2String);
+    presentationLayer.reset(new FsmPresentationLayer(in2String,out2String,state2String));
     
     // Define basic attributes
     name = "FSM";
@@ -638,10 +639,8 @@ Fsm()
     
     // Create all FSM states
     for ( size_t s = 0; s < state2String.size(); s++ ) {
-        shared_ptr<FsmNode> theNode =
-        make_shared<FsmNode>((int)s,state2String[s],presentationLayer);
-        nodes.push_back(theNode);
-        name2node[state2String[s]] = theNode;
+        nodes.emplace_back(new FsmNode((int)s,state2String[s],presentationLayer.get()));
+        name2node[state2String[s]] = nodes.back().get();
     }
     
     
@@ -651,8 +650,8 @@ Fsm()
         string srcName(transition["source"].asString());
         string tgtName(transition["target"].asString());
         
-        shared_ptr<FsmNode> srcNode = name2node[srcName];
-        shared_ptr<FsmNode> tgtNode = name2node[tgtName];
+        FsmNode *srcNode = name2node[srcName];
+        FsmNode *tgtNode = name2node[tgtName];
         
         if ( srcNode == nullptr ) {
             cerr << "Cannot associated valid FSM node with source node name"
@@ -702,11 +701,8 @@ Fsm()
                 << endl;
                 exit(1);
             }
-            shared_ptr<FsmLabel> theLabel =
-            make_shared<FsmLabel>(x.value(),y.value(),presentationLayer.get());
-            shared_ptr<FsmTransition> tr =
-            make_shared<FsmTransition>(srcNode,tgtNode,theLabel);
-            
+            std::unique_ptr<FsmLabel> theLabel { new FsmLabel(x.value(),y.value(),presentationLayer.get()) };
+            std::unique_ptr<FsmTransition> tr { new FsmTransition(srcNode,tgtNode,std::move(theLabel)) };
             
             // Record the requirements satisfied by the transition
             Json::Value satisfies = transition["requirements"];
@@ -714,7 +710,8 @@ Fsm()
                 tr->addSatisfies(satisfie.asString());
             }
             
-            srcNode->addTransition(tr);
+            srcNode->addTransition(tr.get());
+            this->transitions.push_back(std::move(tr));
         }
         
     }
@@ -739,22 +736,18 @@ Fsm()
     // For each node and each input event x that has not been used
     // in any outgoing transition of this node,
     // create a self-loop transition with label x/NOP
-    for ( auto n : nodes ) {
+    for ( auto &n : nodes ) {
         
-        vector<bool> inputs;
-        for ( int x = 0; x <= maxInput; x++ ) {
-            inputs.push_back(false);
-        }
+        vector<bool> inputs(maxInput+1, false);
         for (const auto &tr : n->getTransitions() ) {
             inputs[tr->getLabel()->getInput()] = true;
         }
         for ( int x = 0; x <= maxInput; x++ ) {
             if ( not inputs[x] ) {
-                shared_ptr<FsmLabel> theLabel =
-                make_shared<FsmLabel>(x,theNopNo,presentationLayer.get());
-                shared_ptr<FsmTransition> tr =
-                make_shared<FsmTransition>(n,n,theLabel);
-                n->addTransition(tr);
+                std::unique_ptr<FsmLabel> theLabel { new FsmLabel(x,theNopNo,presentationLayer.get()) };
+                std::unique_ptr<FsmTransition> tr { new FsmTransition(n.get(),n.get(),std::move(theLabel)) };
+                n->addTransition(tr.get());
+                this->transitions.push_back(std::move(tr));
             }
         }
         
@@ -765,7 +758,7 @@ Fsm()
 
 
 Dfsm::Dfsm(const Json::Value& fsmExport,
-           const shared_ptr<FsmPresentationLayer> pl) :
+           FsmPresentationLayer const *pl) :
 Fsm()
 {
     
@@ -787,7 +780,7 @@ Fsm()
     Json::Value transitions = fsmExport["transitions"];
     Json::Value requirements = fsmExport["requirements"];
     
-    map< string,shared_ptr<FsmNode> > name2node;
+    map< string,FsmNode* > name2node;
     
     // check JSON value for a valid FSM export
     if (inputs.isNull() || (!inputs.isArray())) {
@@ -859,8 +852,7 @@ Fsm()
     }
     
     // Create the presentation layer
-    presentationLayer =
-    make_shared<FsmPresentationLayer>(in2String,out2String,state2String);
+    presentationLayer.reset(new FsmPresentationLayer(in2String,out2String,state2String));
     
     // Define basic attributes
     name = "FSM";
@@ -874,10 +866,8 @@ Fsm()
     
     // Create all FSM states
     for ( size_t s = 0; s < state2String.size(); s++ ) {
-        shared_ptr<FsmNode> theNode =
-        make_shared<FsmNode>((int)s,state2String[s],presentationLayer);
-        nodes.push_back(theNode);
-        name2node[state2String[s]] = theNode;
+        nodes.emplace_back(new FsmNode((int)s,state2String[s],presentationLayer.get()));
+        name2node[state2String[s]] = nodes.back().get();
     }
     
     
@@ -887,8 +877,8 @@ Fsm()
         string srcName(transition["source"].asString());
         string tgtName(transition["target"].asString());
         
-        shared_ptr<FsmNode> srcNode = name2node[srcName];
-        shared_ptr<FsmNode> tgtNode = name2node[tgtName];
+        FsmNode *srcNode = name2node[srcName];
+        FsmNode *tgtNode = name2node[tgtName];
         
         if ( srcNode == nullptr ) {
             cerr << "Cannot associated valid FSM node with source node name"
@@ -938,11 +928,8 @@ Fsm()
                 << endl;
                 exit(1);
             }
-            shared_ptr<FsmLabel> theLabel =
-            make_shared<FsmLabel>(x.value(),y.value(),presentationLayer.get());
-            shared_ptr<FsmTransition> tr =
-            make_shared<FsmTransition>(srcNode,tgtNode,theLabel);
-            
+            std::unique_ptr<FsmLabel> theLabel { new FsmLabel(x.value(),y.value(),presentationLayer.get()) };
+            std::unique_ptr<FsmTransition> tr { new FsmTransition(srcNode,tgtNode,std::move(theLabel)) };
             
             // Record the requirements satisfied by the transition
             Json::Value satisfies = transition["requirements"];
@@ -950,7 +937,8 @@ Fsm()
                 tr->addSatisfies(satisfie.asString());
             }
             
-            srcNode->addTransition(tr);
+            srcNode->addTransition(tr.get());
+            this->transitions.push_back(std::move(tr));
         }
         
     }
@@ -975,22 +963,18 @@ Fsm()
     // For each node and each input event x that has not been used
     // in any outgoing transition of this node,
     // create a self-loop transition with label x/NOP
-    for ( auto n : nodes ) {
+    for ( auto &n : nodes ) {
         
-        vector<bool> inputs;
-        for ( int x = 0; x <= maxInput; x++ ) {
-            inputs.push_back(false);
-        }
+        vector<bool> inputs(maxInput+1, false);
         for (const auto &tr : n->getTransitions() ) {
             inputs[tr->getLabel()->getInput()] = true;
         }
         for ( int x = 0; x <= maxInput; x++ ) {
             if ( not inputs[x] ) {
-                shared_ptr<FsmLabel> theLabel =
-                make_shared<FsmLabel>(x,theNopNo.value(),presentationLayer.get());
-                shared_ptr<FsmTransition> tr =
-                make_shared<FsmTransition>(n,n,theLabel);
-                n->addTransition(tr);
+                std::unique_ptr<FsmLabel> theLabel { new FsmLabel(x,theNopNo.value(),presentationLayer.get()) };
+                std::unique_ptr<FsmTransition> tr { new FsmTransition(n.get(),n.get(),std::move(theLabel)) };
+                n->addTransition(tr.get());
+                this->transitions.push_back(std::move(tr));
             }
         }
         
@@ -1028,7 +1012,7 @@ void Dfsm::calcPkTables() {
 Dfsm Dfsm::minimise()
 {
     
-    vector<shared_ptr<FsmNode>> uNodes;
+    std::vector<std::unique_ptr<FsmNode>> uNodes;
     removeUnreachableNodes(uNodes);
     
     calcPkTables();
@@ -1081,19 +1065,19 @@ IOListContainer Dfsm::getCharacterisationSet()
 #endif
     
     /*Create an empty characterisation set as an empty InputTree instance*/
-    characterisationSet = make_shared<Tree>(presentationLayer->clone());
+    characterisationSet.reset(new Tree(presentationLayer->clone()));
     
     /*Loop over all non-equal pairs of states. If they are not already distinguished by
      the input sequences contained in w, create a new input traces that distinguishes them
      and add it to w.*/
     for (unsigned int left = 0; left < nodes.size(); ++ left)
     {
-        shared_ptr<FsmNode> leftNode = nodes.at(left);
+        FsmNode *leftNode = nodes.at(left).get();
         for (unsigned int right = left + 1; right < nodes.size(); ++ right)
         {
-            shared_ptr<FsmNode> rightNode = nodes.at(right);
+            FsmNode *rightNode = nodes.at(right).get();
             
-            if (leftNode->distinguished(rightNode, characterisationSet) != nullptr)
+            if (leftNode->distinguished(rightNode, characterisationSet.get()) != nullptr)
             {
                 continue;
             }
@@ -1147,7 +1131,7 @@ IOTrace Dfsm::applyDet(const InputTrace & i)
 {
     OutputTrace o = OutputTrace(presentationLayer->clone());
     
-    shared_ptr<FsmNode> currentNode = nodes.at(initStateIdx);
+    FsmNode *currentNode = nodes.at(initStateIdx).get();
     
     // Apply input trace to FSM, as far as possible
     for ( int input : i.get() ) {
@@ -1237,39 +1221,34 @@ IOListContainer Dfsm::wpMethod(const unsigned int numAddStates)
 
 IOListContainer Dfsm::wpMethodOnMinimisedDfsm(const unsigned int numAddStates)
 {
-    shared_ptr<Tree> scov = getStateCover();
+    std::unique_ptr<Tree> scov = getStateCover();
 
-    shared_ptr<Tree> tcov = getTransitionCover();
+    std::unique_ptr<Tree> tcov = getTransitionCover();
 
     tcov->remove(scov.get());
-    const shared_ptr<Tree> &r = tcov;
 
     IOListContainer w = getCharacterisationSet();
 
     calcStateIdentificationSetsFast();
 
-    shared_ptr<Tree> Wp1 = scov;
-    if (numAddStates > 0)
-    {
+    std::unique_ptr<Tree> Wp1 = scov->clone();
+    if (numAddStates > 0) {
         IOListContainer inputEnum = IOListContainer(maxInput, 1,
                                                     (int)numAddStates,
                                                     presentationLayer->clone());
-
         Wp1->add(inputEnum);
     }
     Wp1->add(w);
 
-    shared_ptr<Tree> Wp2 = r;
-    if (numAddStates > 0)
-    {
+    std::unique_ptr<Tree> Wp2 = tcov->clone();
+    if (numAddStates > 0) {
         IOListContainer inputEnum = IOListContainer(maxInput,
                                                     (int)numAddStates,
                                                     (int)numAddStates,
                                                     presentationLayer->clone());
-
         Wp2->add(inputEnum);
     }
-    appendStateIdentificationSets(Wp2);
+    appendStateIdentificationSets(Wp2.get());
 
     Wp1->unionTree(Wp2.get());
     return Wp1->getIOLists();
@@ -1326,13 +1305,13 @@ void Dfsm::toCsv(const string& fname) {
 }
 
 InputTrace Dfsm::calcDistinguishingTrace(
-        const shared_ptr<InputTrace> iAlpha,
-        const shared_ptr<InputTrace> iBeta,
-        const shared_ptr<Tree> tree)
+        InputTrace const *iAlpha,
+        InputTrace const *iBeta,
+        Tree const *tree)
 {
-    shared_ptr<FsmNode> s0 = getInitialState();
-    shared_ptr<FsmNode> s1 = *s0->after(*iAlpha).begin();
-    shared_ptr<FsmNode> s2 = *s0->after(*iBeta).begin();
+    FsmNode *s0 = getInitialState();
+    FsmNode *s1 = *s0->after(*iAlpha).begin();
+    FsmNode *s2 = *s0->after(*iBeta).begin();
 
     InputTrace gamma = calcDistinguishingTraceInTree(s1, s2, tree);
     if (!gamma.get().empty())
@@ -1348,95 +1327,90 @@ InputTrace Dfsm::calcDistinguishingTrace(
 }
 
 
-vector<int> Dfsm::calcDistinguishingTrace(shared_ptr<SegmentedTrace> alpha,
-                                               shared_ptr<SegmentedTrace> beta, const shared_ptr<TreeNode> treeNode) {
+vector<int> Dfsm::calcDistinguishingTrace(SegmentedTrace *alpha,
+                                          SegmentedTrace *beta, TreeNode const *treeNode) {
+    FsmNode *s1 = alpha->getTgtNode();
+    FsmNode *s2 = beta->getTgtNode();
     
+    std::unique_ptr<Tree> tree { new Tree(treeNode->clone(),presentationLayer->clone()) };
     
-    shared_ptr<FsmNode> s0 = getInitialState();
-    shared_ptr<FsmNode> s1 = alpha->getTgtNode();
-    shared_ptr<FsmNode> s2 = beta->getTgtNode();
-    
-    shared_ptr<Tree> tree = make_shared<Tree>(treeNode->clone(),presentationLayer->clone());
-    
-    InputTrace gamma = calcDistinguishingTraceInTree(s1, s2, tree);
+    InputTrace gamma = calcDistinguishingTraceInTree(s1, s2, tree.get());
     if (!gamma.get().empty())
         return gamma.get();
     
-    InputTrace gamma2 = calcDistinguishingTraceAfterTree(s1, s2, tree);
+    InputTrace gamma2 = calcDistinguishingTraceAfterTree(s1, s2, tree.get());
     if (!gamma2.get().empty())
         return gamma2.get();
     
     return s1->calcDistinguishingTrace(s2,
                                        pktblLst,
                                        maxInput).get();
-    
 }
 
 
 
 
 InputTrace Dfsm::calcDistinguishingTraceInTree(
-        const shared_ptr<FsmNode> s_i,
-        const shared_ptr<FsmNode> s_j,
-        const shared_ptr<Tree> tree)
+        FsmNode const *s_i,
+        FsmNode const *s_j,
+        Tree const *tree)
 {
     TreeNode *root = tree->getRoot();
     TreeNode *currentNode = root;
-    deque<shared_ptr<InputTrace>> q1;
+    deque<std::unique_ptr<InputTrace>> q1;
 
     /* initialize queue */
     for (auto const &e : currentNode->getChildren())
     {
-        shared_ptr<InputTrace> itrc = make_shared<InputTrace>(presentationLayer->clone());
+        std::unique_ptr<InputTrace> itrc { new InputTrace(presentationLayer->clone()) };
         itrc->add(e->getIO());
-        q1.push_back(itrc);
+        q1.push_back(std::move(itrc));
     }
 
     /* Breadth-first search */
     while(!q1.empty())
     {
-        shared_ptr<InputTrace> itrc = q1.front();
+        std::unique_ptr<InputTrace> itrc { std::move(q1.front()) };
         q1.pop_front();
 
         if(s_i->distinguished(s_j, itrc->get()))
         {
-            return *itrc;
+            return *(itrc.release());
         }
 
         currentNode = root->after(itrc->cbegin(), itrc->cend());
 
         for (auto const &ne : currentNode->getChildren())
         {
-            shared_ptr<InputTrace> itrcTmp = make_shared<InputTrace>(itrc->get(), presentationLayer->clone());
+            std::unique_ptr<InputTrace> itrcTmp { new InputTrace(itrc->get(), presentationLayer->clone()) };
             vector<int>nItrc;
             nItrc.push_back(ne->getIO());
             itrcTmp->append(nItrc);
-            q1.push_back(itrcTmp);
+            q1.push_back(std::move(itrcTmp));
         }
     }
     // Return empty trace: no distinguishing trace found in tree
     return InputTrace(presentationLayer->clone());
 }
 
-InputTrace Dfsm::calcDistinguishingTraceInTree(const shared_ptr<InputTrace> alpha, const shared_ptr<InputTrace> beta, const shared_ptr<Tree> tree)
+InputTrace Dfsm::calcDistinguishingTraceInTree(InputTrace const *alpha, InputTrace const *beta, Tree const *tree)
 {
     // Only one element in the set, since FSM is deterministic
-    shared_ptr<FsmNode> s_i = *(getInitialState()->after(*alpha)).begin();
-    shared_ptr<FsmNode> s_j = *(getInitialState()->after(*beta)).begin();
+    FsmNode *s_i = *(getInitialState()->after(*alpha)).begin();
+    FsmNode *s_j = *(getInitialState()->after(*beta)).begin();
     return calcDistinguishingTraceInTree(s_i, s_j, tree);
 }
 
 InputTrace Dfsm::calcDistinguishingTraceAfterTree(
-        const shared_ptr<FsmNode> s_i,
-        const shared_ptr<FsmNode> s_j,
-        const shared_ptr<Tree> tree)
+        FsmNode *s_i,
+        FsmNode *s_j,
+        Tree const *tree)
 {
-    vector<TreeNode*> leaves = tree->getLeaves();
-    for(TreeNode const *leaf : leaves)
+    for(TreeNode const *leaf : tree->getLeaves())
     {
-        shared_ptr<InputTrace> itrc = make_shared<InputTrace>(leaf->getPath(), presentationLayer->clone());
-        shared_ptr<FsmNode> s_i_after_input = *(s_i->after(*itrc)).begin();
-        shared_ptr<FsmNode> s_j_after_input = *(s_j->after(*itrc)).begin();
+        InputTrace itrc(leaf->getPath(), presentationLayer->clone());
+        FsmNode *s_i_after_input = *(s_i->after(itrc)).begin();
+        FsmNode *s_j_after_input = *(s_j->after(itrc)).begin();
         
         // Cannot find distinguishing trace if the states reached
         // by the path are identical
@@ -1444,13 +1418,13 @@ InputTrace Dfsm::calcDistinguishingTraceAfterTree(
 
         // Since we are dealing with a minimised DFSM, a distinguishing
         // trace can ALWAYS be found, if s_i_after_input != s_j_after_input
-        InputTrace gamma = s_i_after_input->calcDistinguishingTrace(s_j_after_input ,
-                                                                        pktblLst,
-                                                                        maxInput);
+        InputTrace gamma = s_i_after_input->calcDistinguishingTrace(s_j_after_input,
+                                                                    pktblLst,
+                                                                    maxInput);
 
-        itrc->append(gamma.get());
+        itrc.append(gamma.get());
 
-        return *itrc;
+        return itrc;
     }
     
     // Return empty trace: could not find a tree extension
@@ -1461,7 +1435,7 @@ InputTrace Dfsm::calcDistinguishingTraceAfterTree(
 IOListContainer Dfsm::hMethodOnMinimisedDfsm(const unsigned int numAddStates) {
     
     // Our initial state
-    shared_ptr<FsmNode> s0 = getInitialState();
+    FsmNode *s0 = getInitialState();
     
     // We need a valid set of DFSM table and Pk-Tables for this method
     if ( dfsmTable == nullptr ) {
@@ -1469,10 +1443,10 @@ IOListContainer Dfsm::hMethodOnMinimisedDfsm(const unsigned int numAddStates) {
     }
     
     // Auxiliary state cover set needed for further computations
-    shared_ptr<Tree> V = getStateCover();
+    std::unique_ptr<Tree> V = getStateCover();
     
     // Test suite is initialised with the state cover
-    shared_ptr<Tree> iTree = getStateCover();
+    std::unique_ptr<Tree> iTree = V->clone();
     
     IOListContainer inputEnum = IOListContainer(maxInput,
                                                 (int)numAddStates+1,
@@ -1491,29 +1465,26 @@ IOListContainer Dfsm::hMethodOnMinimisedDfsm(const unsigned int numAddStates) {
     IOListContainer::IOListBaseType iolV = iolcV.getIOLists();
     
     for ( size_t i = 0; i < iolV.size(); i++ ) {
-        
-        shared_ptr<InputTrace> alpha =
-        make_shared<InputTrace>(iolV.at(i),presentationLayer->clone());
+        InputTrace alpha(iolV.at(i),presentationLayer->clone());
 
         for ( size_t j = i+1; j < iolV.size(); j++ ) {
             
-            shared_ptr<InputTrace> beta =
-            make_shared<InputTrace>(iolV.at(j),presentationLayer->clone());
+            InputTrace beta(iolV.at(j),presentationLayer->clone());
 
-            std::unique_ptr<Tree> alphaTree = iTree->getSubTree(alpha.get());
-            std::unique_ptr<Tree> betaTree = iTree->getSubTree(beta.get());
-            std::shared_ptr<Tree> prefixRelationTree = std::shared_ptr<Tree>(alphaTree->getPrefixRelationTree(betaTree.get()).release());
+            std::unique_ptr<Tree> alphaTree = iTree->getSubTree(&alpha);
+            std::unique_ptr<Tree> betaTree = iTree->getSubTree(&beta);
+            std::unique_ptr<Tree> prefixRelationTree = alphaTree->getPrefixRelationTree(betaTree.get());
 
-            InputTrace gamma = calcDistinguishingTrace(alpha, beta, prefixRelationTree);
+            InputTrace gamma = calcDistinguishingTrace(&alpha, &beta, prefixRelationTree.get());
 
-            shared_ptr<InputTrace> iAlphaGamma = make_shared<InputTrace>(alpha->get(), presentationLayer->clone());
-            iAlphaGamma->append(gamma.get());
+            InputTrace iAlphaGamma(alpha.get(), presentationLayer->clone());
+            iAlphaGamma.append(gamma);
 
-            shared_ptr<InputTrace> iBetaGamma = make_shared<InputTrace>(beta->get(), presentationLayer->clone());
-            iBetaGamma->append(gamma.get());
+            InputTrace iBetaGamma(beta.get(), presentationLayer->clone());
+            iBetaGamma.append(gamma);
 
-            iTree->addToRoot(iAlphaGamma->get());
-            iTree->addToRoot(iBetaGamma->get());
+            iTree->addToRoot(iAlphaGamma.get());
+            iTree->addToRoot(iBetaGamma.get());
         }
         
     }
@@ -1535,36 +1506,32 @@ IOListContainer Dfsm::hMethodOnMinimisedDfsm(const unsigned int numAddStates) {
         
         for (const auto &alpha : iolV ) {
             
-            shared_ptr<InputTrace> iAlphaBeta =
-                make_shared<InputTrace>(alpha,presentationLayer->clone());
-            iAlphaBeta->append(beta);
-            unordered_set<shared_ptr<FsmNode>>
-                s_alpha_betaSet = s0->after(*iAlphaBeta);
-            shared_ptr<FsmNode> s_alpha_beta = *s_alpha_betaSet.begin();
+            InputTrace iAlphaBeta(alpha,presentationLayer->clone());
+            iAlphaBeta.append(beta);
+            std::unordered_set<FsmNode*> s_alpha_betaSet = s0->after(iAlphaBeta);
+            FsmNode *s_alpha_beta = *s_alpha_betaSet.begin();
             
             for ( auto omega : iolV ) {
-                shared_ptr<InputTrace>
-                    iOmega = make_shared<InputTrace>(omega,presentationLayer->clone());
-                unordered_set<shared_ptr<FsmNode>>
-                    s_omegaSet = s0->after(*iOmega);
-                shared_ptr<FsmNode> s_omega = *s_omegaSet.begin();
+                InputTrace iOmega(omega,presentationLayer->clone());
+                std::unordered_set<FsmNode*> s_omegaSet = s0->after(iOmega);
+                FsmNode *s_omega = *s_omegaSet.begin();
 
                 if ( s_alpha_beta == s_omega ) continue;
 
-                shared_ptr<Tree> alphaBetaTree = iTree->getSubTree(iAlphaBeta.get());
-                shared_ptr<Tree> trAfterOmega = iTree->getSubTree(iOmega.get());
-                shared_ptr<Tree> prefixRelationTree = alphaBetaTree->getPrefixRelationTree(trAfterOmega.get());
+                std::unique_ptr<Tree> alphaBetaTree = iTree->getSubTree(&iAlphaBeta);
+                std::unique_ptr<Tree> trAfterOmega = iTree->getSubTree(&iOmega);
+                std::unique_ptr<Tree> prefixRelationTree = alphaBetaTree->getPrefixRelationTree(trAfterOmega.get());
 
-                InputTrace gamma = calcDistinguishingTrace(iAlphaBeta, iOmega, prefixRelationTree);
+                InputTrace gamma = calcDistinguishingTrace(&iAlphaBeta, &iOmega, prefixRelationTree.get());
 
-                shared_ptr<InputTrace> iAlphaBetaGamma = make_shared<InputTrace>(iAlphaBeta->get(), presentationLayer->clone());
-                iAlphaBetaGamma->append(gamma.get());
+                InputTrace iAlphaBetaGamma(iAlphaBeta.get(), presentationLayer->clone());
+                iAlphaBetaGamma.append(gamma.get());
 
-                shared_ptr<InputTrace> iOmegaGamma = make_shared<InputTrace>(iOmega->get(), presentationLayer->clone());
-                iOmegaGamma->append(gamma.get());
+                InputTrace iOmegaGamma(iOmega.get(), presentationLayer->clone());
+                iOmegaGamma.append(gamma.get());
 
-                iTree->addToRoot(iAlphaBetaGamma->get());
-                iTree->addToRoot(iOmegaGamma->get());
+                iTree->addToRoot(iAlphaBetaGamma.get());
+                iTree->addToRoot(iOmegaGamma.get());
             }
             
         }
@@ -1581,58 +1548,50 @@ IOListContainer Dfsm::hMethodOnMinimisedDfsm(const unsigned int numAddStates) {
     
     for ( auto alpha : iolV ) {
         
-        shared_ptr<InputTrace> iAlpha =
-            make_shared<InputTrace>(alpha,presentationLayer->clone());
+        InputTrace iAlpha(alpha,presentationLayer->clone());
         
         for ( auto beta : inputEnum.getIOLists() ) {
         
             for ( size_t i = 0; i < beta.size() - 1; i++ ) {
-                
-                shared_ptr<InputTrace> iBeta_1 = make_shared<InputTrace>(presentationLayer->clone());
+                InputTrace iBeta_1(presentationLayer->clone());
                 for ( size_t k = 0; k <= i; k++ ) {
-                    iBeta_1->add(beta[k]);
+                    iBeta_1.add(beta[k]);
                 }
                 
                 for ( size_t j = i+1; j < beta.size(); j++ ) {
-                    
-                    shared_ptr<InputTrace> iBeta_2 =
-                        make_shared<InputTrace>(presentationLayer->clone());
+                    InputTrace iBeta_2(presentationLayer->clone());
                     for ( size_t k = 0; k <= j; k++ ) {
-                        iBeta_2->add(beta[k]);
+                        iBeta_2.add(beta[k]);
                     }
                     
-                    shared_ptr<InputTrace> iAlphaBeta_1 =
-                        make_shared<InputTrace>(alpha,presentationLayer->clone());
-                    iAlphaBeta_1->append(iBeta_1->get());
+                    InputTrace iAlphaBeta_1(alpha,presentationLayer->clone());
+                    iAlphaBeta_1.append(iBeta_1.get());
                     
-                    shared_ptr<InputTrace> iAlphaBeta_2 =
-                    make_shared<InputTrace>(alpha,presentationLayer->clone());
-                    iAlphaBeta_2->append(iBeta_2->get());
+                    InputTrace iAlphaBeta_2(alpha,presentationLayer->clone());
+                    iAlphaBeta_2.append(iBeta_2.get());
                     
-                    unordered_set<shared_ptr<FsmNode>> s1Set =
-                    s0->after(*iAlphaBeta_1);
-                    shared_ptr<FsmNode> s1 = *s1Set.begin();
+                    unordered_set<FsmNode*> s1Set = s0->after(iAlphaBeta_1);
+                    FsmNode *s1 = *s1Set.begin();
                     
-                    unordered_set<shared_ptr<FsmNode>> s2Set =
-                    s0->after(*iAlphaBeta_2);
-                    shared_ptr<FsmNode> s2 = *s2Set.begin();
+                    unordered_set<FsmNode*> s2Set = s0->after(iAlphaBeta_2);
+                    FsmNode *s2 = *s2Set.begin();
                     
                     if ( s1 == s2 ) continue;
 
-                    shared_ptr<Tree> afterAlphaBeta1Tree = iTree->getSubTree(iAlphaBeta_1.get());
-                    shared_ptr<Tree> afterAlphaBeta2Tree = iTree->getSubTree(iAlphaBeta_2.get());
-                    shared_ptr<Tree> prefixRelationTree = afterAlphaBeta1Tree->getPrefixRelationTree(afterAlphaBeta2Tree.get());
+                    std::unique_ptr<Tree> afterAlphaBeta1Tree = iTree->getSubTree(&iAlphaBeta_1);
+                    std::unique_ptr<Tree> afterAlphaBeta2Tree = iTree->getSubTree(&iAlphaBeta_2);
+                    std::unique_ptr<Tree> prefixRelationTree = afterAlphaBeta1Tree->getPrefixRelationTree(afterAlphaBeta2Tree.get());
 
-                    InputTrace gamma = calcDistinguishingTrace(iAlphaBeta_1, iAlphaBeta_2, prefixRelationTree);
+                    InputTrace gamma = calcDistinguishingTrace(&iAlphaBeta_1, &iAlphaBeta_2, prefixRelationTree.get());
 
-                    shared_ptr<InputTrace> iAlphaBeta_1Gamma = make_shared<InputTrace>(iAlphaBeta_1->get(), presentationLayer->clone());
-                    iAlphaBeta_1Gamma->append(gamma.get());
+                    InputTrace iAlphaBeta_1Gamma(iAlphaBeta_1.get(), presentationLayer->clone());
+                    iAlphaBeta_1Gamma.append(gamma.get());
 
-                    shared_ptr<InputTrace> iAlphaBeta_2Gamma = make_shared<InputTrace>(iAlphaBeta_2->get(), presentationLayer->clone());
-                    iAlphaBeta_2Gamma->append(gamma.get());
+                    InputTrace iAlphaBeta_2Gamma(iAlphaBeta_2.get(), presentationLayer->clone());
+                    iAlphaBeta_2Gamma.append(gamma.get());
 
-                    iTree->addToRoot(iAlphaBeta_1Gamma->get());
-                    iTree->addToRoot(iAlphaBeta_2Gamma->get());
+                    iTree->addToRoot(iAlphaBeta_1Gamma.get());
+                    iTree->addToRoot(iAlphaBeta_2Gamma.get());
                 }
             }
         
@@ -1743,44 +1702,9 @@ vector< shared_ptr< vector<int> > > Dfsm::calcDistTraces(FsmNode& s1,
 }
 
 
-vector< shared_ptr< vector<int> > > Dfsm::getDistTraces(FsmNode& s1,
-                                                                  FsmNode& s2) {
+vector< shared_ptr< vector<int> > > Dfsm::getDistTraces(FsmNode const &s1,
+                                                        FsmNode const &s2) {
     
     return distTraces[s1.getId()][s2.getId()];
     
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

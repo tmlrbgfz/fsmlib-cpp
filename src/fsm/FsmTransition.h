@@ -19,17 +19,17 @@ private:
 	/**
 	 *The node from which the transition comes
 	 */
-	std::shared_ptr<FsmNode> source;
+	FsmNode *source;
 
 	/**
 	 * The node where the transition go
 	 */
-	std::shared_ptr<FsmNode> target;
+	FsmNode *target;
 
 	/**
 	 * The label of this transition
 	 */
-	std::shared_ptr<FsmLabel> label;
+	std::unique_ptr<FsmLabel> label;
     
     /**
      *  List of requirements satisfied by the transition
@@ -43,26 +43,26 @@ public:
 	@param target The node where the transition go
 	@param label The label of this transition
 	*/
-	FsmTransition(const std::shared_ptr<FsmNode>  source,
-                  const std::shared_ptr<FsmNode>  target,
-                  const std::shared_ptr<FsmLabel> label);
+	FsmTransition(FsmNode *source,
+                  FsmNode *target,
+                  std::unique_ptr<FsmLabel> &&label);
 
 	/**
 	 * Getter for the source
 	 * @return The source node of the transition
 	 */
-	std::shared_ptr<FsmNode> getSource();
+	FsmNode * getSource() const;
 
 	/**
 	Getter for the target
 	@return The target node of tghis transition
 	*/
-	std::shared_ptr<FsmNode> getTarget();
+	FsmNode * getTarget() const;
     
     /** setter functions */
-    void setSource(std::shared_ptr<FsmNode> src);
-    void setTarget(std::shared_ptr<FsmNode> tgt);
-    void setLabel(std::shared_ptr<FsmLabel> lbl);
+    void setSource(FsmNode * src);
+    void setTarget(FsmNode * tgt);
+    void setLabel(std::unique_ptr<FsmLabel> &&lbl);
 
     
     /** 
@@ -75,7 +75,7 @@ public:
 	Getter for the label
 	@return The label of this transition
 	*/
-    std::shared_ptr<FsmLabel> getLabel();
+    FsmLabel * getLabel() const;
     
     /**
      *  Get list of requirements satisified by the transition

@@ -47,8 +47,8 @@ void test1() {
     cout << "TC-DFSM-0001 Show that Dfsm.applyDet() deals correctly with incomplete DFSMs "
     << endl;
     
-    shared_ptr<FsmPresentationLayer> pl = make_shared<FsmPresentationLayer>();
-    Dfsm d("../../../resources/TC-DFSM-0001.fsm",pl,"m1");
+    std::unique_ptr<FsmPresentationLayer> pl { new FsmPresentationLayer() };
+    Dfsm d("../../../resources/TC-DFSM-0001.fsm",std::move(pl),"m1");
     d.toDot("TC-DFSM-0001");
     
     vector<int> inp;
@@ -59,7 +59,7 @@ void test1() {
     inp.push_back(1);
     
     
-    InputTrace i(inp,pl->clone());
+    InputTrace i(inp,d.getPresentationLayer()->clone());
     
     cout << "InputTrace = " << i << endl;
     
@@ -80,7 +80,7 @@ void test1() {
     
     
     inp.insert(inp.begin(),9);
-    InputTrace j(inp,pl->clone());
+    InputTrace j(inp,d.getPresentationLayer()->clone());
     IOTrace u = d.applyDet(j);
     cout << "IOTrace u = " << u << endl;
     assert("TC-DFSM-0001",
@@ -96,8 +96,8 @@ void test2() {
     cout << "TC-FSM-0001 Show that the copy constructor produces a deep copy of an FSM generated at random "
     << endl;
     
-    shared_ptr<FsmPresentationLayer> pl = make_shared<FsmPresentationLayer>();
-    shared_ptr<Fsm> f1 = Fsm::createRandomFsm("f1",3,5,10,pl);
+    std::unique_ptr<FsmPresentationLayer> pl { new FsmPresentationLayer() };
+    shared_ptr<Fsm> f1 = Fsm::createRandomFsm("f1",3,5,10,std::move(pl));
     
     shared_ptr<Fsm> f2 = make_shared<Fsm>(*f1);
     
@@ -139,9 +139,8 @@ void test3() {
     
     
     for ( size_t i = 0; i < 10; i++ ) {
-        shared_ptr<FsmPresentationLayer> pl =
-        make_shared<FsmPresentationLayer>();
-        shared_ptr<Fsm> fsm = Fsm::createRandomFsm("F",5,5,8,pl,i);
+        std::unique_ptr<FsmPresentationLayer> pl { new FsmPresentationLayer() };
+        shared_ptr<Fsm> fsm = Fsm::createRandomFsm("F",5,5,8,std::move(pl),i);
         fsm->toDot("F");
         
         shared_ptr<Fsm> fsmMutant = fsm->createMutant("F_M",1,0);
@@ -220,12 +219,11 @@ void test4() {
     const bool markAsVisited = true;
     bool havePassed = true;
     
-    shared_ptr<FsmPresentationLayer> pl = make_shared<FsmPresentationLayer>();
-    
     for (size_t i = 0; i < 2000; i++) {
         
         // Create a random FSM
-        std::shared_ptr<Fsm> f = Fsm::createRandomFsm("F",5,5,10,pl,i);
+        std::unique_ptr<FsmPresentationLayer> pl { new FsmPresentationLayer() };
+        std::shared_ptr<Fsm> f = Fsm::createRandomFsm("F",5,5,10,std::move(pl),i);
         std::shared_ptr<Tree> sc = f->getStateCover();
         
         if ( sc->size() != (size_t)f->getMaxNodes() + 1 ) {
@@ -241,11 +239,11 @@ void test4() {
         IOListContainer::IOListBaseType iols = c.getIOLists();
         
         for ( auto const &inLst : iols ) {
-            auto iTr = make_shared<InputTrace>(inLst,pl->clone());
+            auto iTr = make_shared<InputTrace>(inLst,f->getPresentationLayer()->clone());
             f->apply(*iTr,true);
         }
         
-        for ( std::shared_ptr<FsmNode> n : f->getNodes() ) {
+        for ( auto &n : f->getNodes() ) {
             if ( not n->hasBeenVisited() ) {
                 havePassed = false;
                 assert("TC-FSM-0004",
@@ -264,7 +262,7 @@ void test4() {
                 for ( auto const &inLst : iols ) {
                     ostringstream oss;
                     oss << iCtr++;
-                    auto iTr = make_shared<InputTrace>(inLst,pl->clone());
+                    auto iTr = make_shared<InputTrace>(inLst,f->getPresentationLayer()->clone());
                     filebuf fbot;
                     OutputTree ot = f->apply(*iTr,markAsVisited);
                     fbot.open ("FailedStateCover" + oss.str() + ".dot",
@@ -298,12 +296,10 @@ void test5() {
     cout << "TC-FSM-0005 Check correctness of input " <<
     "equivalence classes" << endl;
     
-    shared_ptr<FsmPresentationLayer> pl =
-    make_shared<FsmPresentationLayer>();
-    
+    FsmPresentationLayer *pl { new FsmPresentationLayer() };
     
     shared_ptr<Fsm> fsm =
-    make_shared<Fsm>("../../../resources/TC-FSM-0005.fsm",pl,"F");
+    make_shared<Fsm>("../../../resources/TC-FSM-0005.fsm",pl->clone(),"F");
     fsm->toDot("TC-FSM-0005");
     
     vector< std::unordered_set<int> > v = fsm->getEquivalentInputs();
@@ -343,7 +339,7 @@ void test5() {
     
     
     // Check FSM without any equivalent inputs
-    fsm = make_shared<Fsm>("../../../resources/fsmGillA7.fsm",pl,"F");
+    fsm = make_shared<Fsm>("../../../resources/fsmGillA7.fsm",pl->clone(),"F");
     fsm->toDot("fsmGillA7");
     v = fsm->getEquivalentInputs();
     
@@ -369,8 +365,8 @@ void test6() {
     
     cout << "TC-FSM-0006 Check correctness of FSM Print Visitor " << endl;
     
-    shared_ptr<FsmPresentationLayer> pl = make_shared<FsmPresentationLayer>();
-    Dfsm d("../../../resources/TC-DFSM-0001.fsm",pl,"m1");
+    FsmPresentationLayer *pl { new FsmPresentationLayer() };
+    Dfsm d("../../../resources/TC-DFSM-0001.fsm",pl->clone(),"m1");
     
     FsmPrintVisitor v;
     
@@ -391,11 +387,8 @@ void test7() {
     std::ifstream outputFile("../../../resources/garageOut.txt");
     std::ifstream stateFile("../../../resources/garageState.txt");
     
-    shared_ptr<FsmPresentationLayer> pl =
-    make_shared<FsmPresentationLayer>(inputFile,
-                                      outputFile,
-                                      stateFile);
-    Dfsm d("../../../resources/garage.fsm",pl,"GC");
+    FsmPresentationLayer *pl { new FsmPresentationLayer(inputFile, outputFile, stateFile) };
+    Dfsm d("../../../resources/garage.fsm",pl->clone(),"GC");
     d.toDot("GC");
     
     FsmSimVisitor v;
@@ -419,11 +412,8 @@ void test8() {
     std::ifstream outputFile("../../../resources/garageOut.txt");
     std::ifstream stateFile("../../../resources/garageState.txt");
     
-    shared_ptr<FsmPresentationLayer> pl =
-    make_shared<FsmPresentationLayer>(inputFile,
-                                      outputFile,
-                                      stateFile);
-    Dfsm d("../../../resources/garage.fsm",pl,"GC");
+    FsmPresentationLayer *pl { new FsmPresentationLayer(inputFile, outputFile, stateFile) };
+    Dfsm d("../../../resources/garage.fsm",pl->clone(),"GC");
     d.toDot("GC");
     
     FsmOraVisitor v;
@@ -464,12 +454,12 @@ void test9() {
     
     size_t oldSize = d->size();
     
-    vector<shared_ptr<FsmNode>> uNodes;
+    vector<std::unique_ptr<FsmNode>> uNodes;
     if ( d->removeUnreachableNodes(uNodes) ) {
         
         d->toDot("G_all_reachable");
         
-        for ( auto n : uNodes ) {
+        for ( auto &n : uNodes ) {
             cout << "Removed unreachable node: " << n->getName() << endl;
         }
         
@@ -493,7 +483,7 @@ void test10() {
     << endl;
     
     shared_ptr<Dfsm> d = nullptr;
-    shared_ptr<FsmPresentationLayer> pl;
+    FsmPresentationLayer *pl;
     Reader jReader;
     Value root;
     stringstream document;
@@ -520,19 +510,19 @@ void test10() {
     bool allNodesDistinguished = true;
     for ( size_t n = 0; n < dMin.size(); n++ ) {
         
-        shared_ptr<FsmNode> node1 = dMin.getNodes().at(n);
+        FsmNode *node1 = dMin.getNodes().at(n).get();
         
         for ( size_t m = n+1; m < dMin.size(); m++ ) {
-            shared_ptr<FsmNode> node2 = dMin.getNodes().at(m);
+            FsmNode *node2 = dMin.getNodes().at(m).get();
             
             bool areDistinguished = false;
             
             for ( auto const &inputs : inLst ) {
                 
-                shared_ptr<InputTrace> itr = make_shared<InputTrace>(inputs,pl->clone());
+                InputTrace itr(inputs,pl->clone());
                 
-                OutputTree o1 = node1->apply(*itr);
-                OutputTree o2 = node2->apply(*itr);
+                OutputTree o1 = node1->apply(itr, false);
+                OutputTree o2 = node2->apply(itr, false);
                 
                 if ( o1 != o2 ) {
                     areDistinguished = true;
@@ -574,7 +564,7 @@ void gdc_test1() {
     shared_ptr<Dfsm> gdc =
     make_shared<Dfsm>("../../../resources/garage-door-controller.csv","GDC");
     
-    shared_ptr<FsmPresentationLayer> pl = gdc->getPresentationLayer();
+    FsmPresentationLayer *pl = gdc->getPresentationLayer();
     
     gdc->toDot("GDC");
     gdc->toCsv("GDC");
@@ -609,7 +599,7 @@ void gdc_test1() {
 vector<IOTrace> runAgainstRefModel(shared_ptr<Dfsm> refModel,
                                    IOListContainer& c) {
     
-    shared_ptr<FsmPresentationLayer> pl = refModel->getPresentationLayer();
+    FsmPresentationLayer *pl = refModel->getPresentationLayer();
     
     auto iolCnt = c.getIOLists();
     
@@ -618,8 +608,8 @@ vector<IOTrace> runAgainstRefModel(shared_ptr<Dfsm> refModel,
 
     for ( auto const &lst : iolCnt ) {
         
-        shared_ptr<InputTrace> itr = make_shared<InputTrace>(lst,pl->clone());
-        IOTrace iotr = refModel->applyDet(*itr);
+        InputTrace itr(lst,pl->clone());
+        IOTrace iotr = refModel->applyDet(itr);
         iotrLst.push_back(iotr);
         
     }
@@ -746,9 +736,9 @@ int main()
 #endif
     
     
-    test1();
-    test2();
-    test3();
+    //test1();
+    //test2();
+    //test3();
     test4();
     test5();
     test6();

@@ -50,7 +50,7 @@ static string testSuiteFileName;
 static string fsmSutName;
 
 
-static shared_ptr<FsmPresentationLayer> pl = nullptr;
+static FsmPresentationLayer *pl = nullptr;
 static shared_ptr<Dfsm> dfsmSut = nullptr;
 
 static bool isDeterministic = true;

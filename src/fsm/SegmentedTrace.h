@@ -11,20 +11,21 @@
 #include <deque>
 
 #include "fsm/FsmNode.h"
+#include "fsm/Trace.h"
 
 class TraceSegment {
     
 private:
     std::shared_ptr< std::vector<int> > segment;
     size_t prefix;
-    std::shared_ptr<FsmNode> tgtNode;
+    FsmNode *tgtNode;
     
 public:
     
     TraceSegment();
     TraceSegment(std::shared_ptr< std::vector<int> > segment,
                  size_t prefix = std::string::npos,
-                 std::shared_ptr<FsmNode> tgtNode = nullptr);
+                 FsmNode *tgtNode = nullptr);
     
     /** Shallow copy */
     TraceSegment(const TraceSegment& other);
@@ -35,18 +36,17 @@ public:
     
     std::shared_ptr< std::vector<int> > get() { return segment; }
     
-    std::vector<int> getCopy();
+    std::vector<int> getCopy() const;
+    Trace getAsTrace(std::unique_ptr<FsmPresentationLayer> && presentationLayer) const;
     
     size_t size() const;
     
     int at(size_t n);
     
-    std::shared_ptr<FsmNode> getTgtNode() { return tgtNode; }
-    void setTgtNode(const std::shared_ptr<FsmNode> tgtNode) { this->tgtNode = tgtNode; }
+    FsmNode *getTgtNode() { return tgtNode; }
+    void setTgtNode(FsmNode *tgtNode) { this->tgtNode = tgtNode; }
     
     friend std::ostream & operator<<(std::ostream & out, const TraceSegment& fsm);
-
-    
 };
 
 class SegmentedTrace
@@ -64,7 +64,7 @@ public:
     
     std::vector<int> getCopy();
     
-    std::shared_ptr<FsmNode> getTgtNode();
+    FsmNode *getTgtNode();
     
     size_t size() const { return segments.size(); }
     

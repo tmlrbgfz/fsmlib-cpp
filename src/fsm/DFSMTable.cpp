@@ -10,7 +10,7 @@
 
 DFSMTable::DFSMTable(const int numStates,
                      const int maxInput,
-                     std::shared_ptr<FsmPresentationLayer> presentationLayer)
+                     FsmPresentationLayer const *presentationLayer)
 	: maxInput(maxInput), presentationLayer(presentationLayer)
 {
 	rows.insert(rows.end(), numStates, nullptr);

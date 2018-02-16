@@ -15,7 +15,7 @@ TraceSegment::TraceSegment() {
 
 TraceSegment::TraceSegment(std::shared_ptr< std::vector<int> > segment,
                            size_t prefix,
-                           std::shared_ptr<FsmNode> tgtNode)
+                           FsmNode *tgtNode)
 {
     this->segment = segment;
     this->prefix = prefix;
@@ -35,23 +35,13 @@ void TraceSegment::setPrefix(size_t pref) {
 
 
  
-vector<int> TraceSegment::getCopy() {
-    
-    if ( prefix == string::npos or
-         prefix >= segment->size() ) {
-        vector<int> v(segment->begin(),segment->end());
-        return v;
-    }
-
-    if ( prefix == 0 ) {
-        vector<int> v;
-        return v;
-    }
-    
-    vector<int> w(segment->begin(),segment->begin() + prefix);
-    
+vector<int> TraceSegment::getCopy() const {
+    std::vector<int> w(segment->begin(), segment->begin() + std::min(prefix, segment->size()));
     return w;
-    
+}
+
+Trace TraceSegment::getAsTrace(std::unique_ptr<FsmPresentationLayer> &&presentationLayer) const {
+    return Trace(getCopy(), std::move(presentationLayer));
 }
 
 size_t TraceSegment::size() const {
@@ -110,7 +100,7 @@ vector<int> SegmentedTrace::getCopy() {
     return v;
 }
 
-shared_ptr<FsmNode> SegmentedTrace::getTgtNode() {
+FsmNode *SegmentedTrace::getTgtNode() {
     
     if ( segments.size() == 0 ) return nullptr;
     

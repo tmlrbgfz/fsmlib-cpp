@@ -69,7 +69,7 @@ private:
 	/**
 	The presentation layer used by the OFSMTable
 	*/
-	const std::shared_ptr<FsmPresentationLayer> presentationLayer;
+	FsmPresentationLayer const *presentationLayer;
 
 	/**
 	Create new OFSMTable from the initial one.
@@ -87,10 +87,10 @@ public:
 	@param maxOutput output alphabet is in range 0..maxOutput
 	@param presentationLayer The presentation layer used by the OFSMTable
 	*/
-	OFSMTable(const std::vector<std::shared_ptr<FsmNode>>& nodes, const int maxInput, const int maxOutput, const std::shared_ptr<FsmPresentationLayer> presentationLayer);
+	OFSMTable(std::vector<std::unique_ptr<FsmNode>> const &nodes, const int maxInput, const int maxOutput, FsmPresentationLayer const *presentationLayer);
 	
 	//TODO
-	OFSMTable(const int numStates, const int maxInput, const int maxOutput, const std::vector<std::shared_ptr<OFSMTableRow>>& rows, const std::shared_ptr<FsmPresentationLayer> presentationLayer);
+	OFSMTable(const int numStates, const int maxInput, const int maxOutput, const std::vector<std::shared_ptr<OFSMTableRow>>& rows, FsmPresentationLayer const *presentationLayer);
 	
 	//TODO
 	int getId();

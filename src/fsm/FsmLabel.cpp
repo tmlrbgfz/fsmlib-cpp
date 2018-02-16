@@ -19,6 +19,10 @@ FsmLabel::FsmLabel(const FsmLabel& other) :
     
 }
 
+std::unique_ptr<FsmLabel> FsmLabel::clone() const {
+	return std::unique_ptr<FsmLabel>(new FsmLabel(*this));
+}
+
 int FsmLabel::getInput() const
 {
 	return input;

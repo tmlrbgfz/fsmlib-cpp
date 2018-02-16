@@ -29,6 +29,10 @@ void Trace::append(const std::vector<int>& traceToAppend) {
 	trace.insert(trace.end(), traceToAppend.begin(), traceToAppend.end());
 }
 
+void Trace::append(Trace const &traceToAppend) {
+	append(traceToAppend.get());
+}
+
 std::vector<int> Trace::get() const {
 	return trace;
 }

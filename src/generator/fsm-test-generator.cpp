@@ -63,7 +63,7 @@ static string tcFilePrefix;
 static generation_method_t genMethod;
 static unsigned int numAddStates;
 
-static shared_ptr<FsmPresentationLayer> pl = nullptr;
+static std::unique_ptr<FsmPresentationLayer> pl = nullptr;
 static shared_ptr<Dfsm> dfsm = nullptr;
 static shared_ptr<Dfsm> dfsmAbstraction = nullptr;
 static shared_ptr<Fsm> fsm = nullptr;
@@ -292,7 +292,7 @@ static void readModel(model_type_t mtp,
         case FSM_CSV:
             isDeterministic = true;
             myDfsm = make_shared<Dfsm>(thisFileName,thisFsmName);
-            pl = myDfsm->getPresentationLayer();
+            pl = myDfsm->getPresentationLayer()->clone();
             
             break;
             
@@ -307,7 +307,7 @@ static void readModel(model_type_t mtp,
             
             if ( jReader.parse(document.str(),root) ) {
                 myDfsm = make_shared<Dfsm>(root);
-                pl = myDfsm->getPresentationLayer();
+                pl = myDfsm->getPresentationLayer()->clone();
             }
             else {
                 cerr << "Could not parse JSON model - exit." << endl;
@@ -318,18 +318,18 @@ static void readModel(model_type_t mtp,
             
         case FSM_BASIC:
             if ( plStateFile.empty() ) {
-                pl = make_shared<FsmPresentationLayer>();
+                pl.reset(new FsmPresentationLayer());
             }
             else {
                 std::ifstream inputFile(plInputFile);
                 std::ifstream outputFile(plOutputFile);
                 std::ifstream stateFile(plStateFile);
-                pl = make_shared<FsmPresentationLayer>(inputFile,outputFile,stateFile);
+                pl.reset(new FsmPresentationLayer(inputFile,outputFile,stateFile));
             }
-            myFsm = make_shared<Fsm>(modelFile,pl,fsmName);
+            myFsm = make_shared<Fsm>(modelFile,pl->clone(),fsmName);
             if ( myFsm->isDeterministic() ) {
                 isDeterministic = true;
-                myDfsm = make_shared<Dfsm>(modelFile,pl,fsmName);
+                myDfsm = make_shared<Dfsm>(modelFile,pl->clone(),fsmName);
                 myFsm = nullptr;
             }
             break;
@@ -350,7 +350,7 @@ static void readModelAbstraction(model_type_t mtp,
                                  string thisFileName,
                                  string thisFsmName,
                                  shared_ptr<Dfsm>& myDfsm,
-                                 shared_ptr<FsmPresentationLayer> plRef) {
+                                 FsmPresentationLayer *plRef) {
     
     myDfsm = nullptr;
     
@@ -358,7 +358,7 @@ static void readModelAbstraction(model_type_t mtp,
     switch ( mtp ) {
         case FSM_CSV:
             isDeterministic = true;
-            myDfsm = make_shared<Dfsm>(thisFileName,thisFsmName,plRef);
+            myDfsm = make_shared<Dfsm>(thisFileName,thisFsmName,plRef->clone());
             break;
             
         case FSM_JSON:
@@ -518,8 +518,8 @@ static void addSHTraces(deque<pair<shared_ptr<SegmentedTrace>,shared_ptr<Segment
     for ( const auto p : X ) {
         const shared_ptr<SegmentedTrace> tr1 = p.first;
         const shared_ptr<SegmentedTrace> tr2 = p.second;
-        shared_ptr<FsmNode> s1 = tr1->getTgtNode();
-        shared_ptr<FsmNode> s2 = tr2->getTgtNode();
+        FsmNode *s1 = tr1->getTgtNode();
+        FsmNode *s2 = tr2->getTgtNode();
         
 #if DBG
         cout << "============================================ " << endl;
@@ -535,15 +535,15 @@ static void addSHTraces(deque<pair<shared_ptr<SegmentedTrace>,shared_ptr<Segment
         // the original numbers of the unminimised machine.
         // The latter are identical to the node numbers of
         // the unminimised abstraction used here as distDfsm.
-        shared_ptr<FsmNode> d1;
-        shared_ptr<FsmNode> d2;
+        FsmNode *d1;
+        FsmNode *d2;
         if ( dfsmMinNodes2dfsmNodes == nullptr) {
             d1 = s1;
             d2 = s2;
         }
         else {
-            d1 = distDfsm.getNodes().at(dfsmMinNodes2dfsmNodes->at(s1->getId()));
-            d2 = distDfsm.getNodes().at(dfsmMinNodes2dfsmNodes->at(s2->getId()));
+            d1 = distDfsm.getNodes().at(dfsmMinNodes2dfsmNodes->at(s1->getId())).get();
+            d2 = distDfsm.getNodes().at(dfsmMinNodes2dfsmNodes->at(s2->getId())).get();
 #if DBG
             cout << "ORIGINAL NODES " << d1->getId() << " " << d2->getId() << endl;
 #endif
@@ -964,8 +964,8 @@ static void safeHMethod(const shared_ptr<TestSuite> &testSuite) {
     cout << "REFMIN size = " << dfsmRefMin.size() << endl;
     cout << "ABSMIN size = " << dfsmAbstractionMin.size() << endl;
     
-    shared_ptr<FsmNode> s0 = dfsmRefMin.getInitialState();
-    shared_ptr<FsmPresentationLayer> pl = dfsmRefMin.getPresentationLayer();
+    FsmNode *s0 = dfsmRefMin.getInitialState();
+    FsmPresentationLayer *pl = dfsmRefMin.getPresentationLayer();
     
     // Create an empty test suite as a tree of input traces
     shared_ptr<Tree> testSuiteTree = make_shared<Tree>(pl->clone());
@@ -985,7 +985,7 @@ static void safeHMethod(const shared_ptr<TestSuite> &testSuite) {
     // each trace consisting of a single segment from V, together
     // with its target node.
     for ( const auto &v : Vvectors ) {
-        shared_ptr<FsmNode> tgtNode = *(s0->after(v).begin());
+        FsmNode *tgtNode = *(s0->after(v).begin());
         shared_ptr< vector<int> > vPtr =
             make_shared< vector<int> >(v.begin(),v.end());
         shared_ptr<TraceSegment> seg = make_shared<TraceSegment>(vPtr,
@@ -1035,7 +1035,7 @@ static void safeHMethod(const shared_ptr<TestSuite> &testSuite) {
     for ( const auto v : Vtraces ) {
         for ( const auto seg : inputEnumDeq ) {
             // Calculate the target node reached via v.seg
-            shared_ptr<FsmNode> tgtNode =
+            FsmNode *tgtNode =
                 *(v->getTgtNode()->after(*seg->get()).begin());
             shared_ptr<TraceSegment> s = make_shared<TraceSegment>(*seg);
             s->setTgtNode(tgtNode);
@@ -1087,14 +1087,14 @@ static void safeHMethod(const shared_ptr<TestSuite> &testSuite) {
         shared_ptr<TraceSegment> seg = v->back();
         // Loop over all true gamma-prefixes of v = alpha.gamma
         for ( size_t prefix = seg->size() - 1; prefix > 0; prefix-- ) {
-            shared_ptr<FsmNode> tgtNode1 = v->getTgtNode();
+            FsmNode *tgtNode1 = v->getTgtNode();
 
             shared_ptr<TraceSegment> seg1 = v->front();
             shared_ptr<TraceSegment> s1 = make_shared<TraceSegment>(*seg1);
             shared_ptr<TraceSegment> s2 = make_shared<TraceSegment>(*seg);
             s2->setPrefix(prefix);
             
-            shared_ptr<FsmNode> tgtNode2 =
+            FsmNode *tgtNode2 =
                 *(s1->getTgtNode()->after(s2).begin());
             
             if ( tgtNode1 != tgtNode2 ) {
@@ -1189,7 +1189,7 @@ static void safeWpMethod(const shared_ptr<TestSuite> &testSuite) {
                                                  pl->clone());
     W3->add(inputEnum2);
     
-    dfsmAbstractionMin.appendStateIdentificationSets(W3);
+    dfsmAbstractionMin.appendStateIdentificationSets(W3.get());
     
     // Union of all test cases: W1 union W2 union W3
     // Collected again in W1
@@ -1383,7 +1383,7 @@ int main(int argc, char* argv[])
             exit(1);
         }
         
-        shared_ptr<FsmPresentationLayer> plRef = dfsm->getPresentationLayer();
+        FsmPresentationLayer *plRef = dfsm->getPresentationLayer();
         
         readModelAbstraction(modelAbstractionType,
                              modelAbstractionFile,

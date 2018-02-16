@@ -45,6 +45,8 @@ public:
      */
     FsmLabel(const FsmLabel& other);
 
+	std::unique_ptr<FsmLabel> clone() const;
+
 	/**
 	Getter for the input
 	@return The input of this label

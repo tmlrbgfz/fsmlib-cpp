@@ -40,6 +40,8 @@ public:
 	
 	Trace(Trace const &other);
 	Trace(Trace &&other) = default;
+
+	Trace& operator=(Trace &&other) = default;
 	
 	/**
 	 * Add an element, at the end of the trace
@@ -50,6 +52,7 @@ public:
      * Append a vector of int to the trace
      */
     void append(const std::vector<int>& traceToAppend);
+	void append(Trace const &traceToAppend);
 
 	/**
 	Getter for the trace itself

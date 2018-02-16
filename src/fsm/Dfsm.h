@@ -44,7 +44,7 @@ private:
     
     std::shared_ptr<FsmPresentationLayer> createPresentationLayerFromCsvFormat(const std::string& fname);
     
-    std::shared_ptr<FsmPresentationLayer> createPresentationLayerFromCsvFormat(const std::string& fname,const std::shared_ptr<FsmPresentationLayer> pl);
+    std::shared_ptr<FsmPresentationLayer> createPresentationLayerFromCsvFormat(const std::string& fname, FsmPresentationLayer const *pl);
     
     void createDfsmTransitionGraph(const std::string& fname);
     
@@ -87,7 +87,7 @@ public:
          const int maxNodes,
          const int maxInput,
          const int maxOutput,
-         const std::shared_ptr<FsmPresentationLayer> presentationLayer);
+         std::unique_ptr<FsmPresentationLayer> &&presentationLayer);
     
     /**
      Create a DFSM from a file description
@@ -99,7 +99,7 @@ public:
      are determined from the input file specifying the FSM.
      */
     Dfsm(const std::string & fname,
-         const std::shared_ptr<FsmPresentationLayer> presentationLayer,
+         std::unique_ptr<FsmPresentationLayer> &&presentationLayer,
          const std::string & fsmName);
 
     
@@ -122,7 +122,7 @@ public:
          const int maxNodes,
          const int maxInput,
          const int maxOutput,
-         const std::shared_ptr<FsmPresentationLayer> presentationLayer);
+         std::unique_ptr<FsmPresentationLayer> &&presentationLayer);
 
 	/**
 	Create a DFSM from a list of nodes
@@ -137,8 +137,9 @@ public:
 	Dfsm(const std::string & fsmName,
          const int maxInput,
          const int maxOutput,
-         const std::vector<std::shared_ptr<FsmNode>> lst,
-         const std::shared_ptr<FsmPresentationLayer> presentationLayer);
+         std::vector<std::unique_ptr<FsmNode>> &&lst,
+         std::vector<std::unique_ptr<FsmTransition>> &&transitions,
+         std::unique_ptr<FsmPresentationLayer> &&presentationLayer);
 
 	/**
 	Create a DFSM from the equivalent deterministic FSM
@@ -185,7 +186,7 @@ public:
      */
     Dfsm(const std::string& fname,
          const std::string& fsmName,
-         const std::shared_ptr<FsmPresentationLayer> presentationLayer);
+         std::unique_ptr<FsmPresentationLayer> &&presentationLayer);
     
     
     /**
@@ -214,7 +215,7 @@ public:
      *  same inputs and outputs.
      */
     Dfsm(const Json::Value& jsonModel,
-         const std::shared_ptr<FsmPresentationLayer> presentationLayer);
+         FsmPresentationLayer const *presentationLayer);
 
 
 	/**
@@ -383,10 +384,10 @@ public:
      *        can be lenghtened to distinguish s_i and s_j.
      * @return a distinguishing trace for s_i and s_j
      */
-    InputTrace calcDistinguishingTrace(const std::shared_ptr<InputTrace> iAlpha, const std::shared_ptr<InputTrace> iBeta, const std::shared_ptr<Tree> tree);
+    InputTrace calcDistinguishingTrace(InputTrace const *iAlpha, InputTrace const *iBeta, Tree const *tree);
     
-    std::vector<int> calcDistinguishingTrace(std::shared_ptr<SegmentedTrace> alpha,
-                                             std::shared_ptr<SegmentedTrace> beta, const std::shared_ptr<TreeNode> treeNode);
+    std::vector<int> calcDistinguishingTrace(SegmentedTrace *alpha,
+                                             SegmentedTrace *beta, TreeNode const *treeNode);
 
     /**
      *  Breadth-first search in a given Tree for a Trace that
@@ -401,8 +402,8 @@ public:
      *  @return distinguishing InputTrace for s_i and s_j.
      *   returns an empty InputTrace if no distinguishing trace could be found
      */
-    InputTrace calcDistinguishingTraceInTree(const std::shared_ptr<FsmNode> s_i, const std::shared_ptr<FsmNode> s_j, const std::shared_ptr<Tree> tree);
-    InputTrace calcDistinguishingTraceInTree(const std::shared_ptr<InputTrace> alpha, const std::shared_ptr<InputTrace> beta, const std::shared_ptr<Tree> tree);
+    InputTrace calcDistinguishingTraceInTree(FsmNode const *s_i, FsmNode const *s_j, Tree const *tree);
+    InputTrace calcDistinguishingTraceInTree(InputTrace const *alpha, InputTrace const *beta, Tree const *tree);
 
     /**
      *  Calculate trace that distinguishes the states s_i=s0->after(alpha) and
@@ -417,7 +418,7 @@ public:
      *  @return distinguishing InputTrace for s_i and s_j.
      *   returns an empty InputTrace if no distinguishing trace could be found
      */
-    InputTrace calcDistinguishingTraceAfterTree(const std::shared_ptr<FsmNode> s_i, const std::shared_ptr<FsmNode> s_j, const std::shared_ptr<Tree> tree);
+    InputTrace calcDistinguishingTraceAfterTree(FsmNode *s_i, FsmNode *s_j, Tree const *tree);
 
     std::vector<std::shared_ptr<PkTable> > getPktblLst() const;
     std::shared_ptr<DFSMTable> getDFSMTable() const { return dfsmTable; }
@@ -436,8 +437,7 @@ public:
     /**
      * Return the vector of shortest traces distinguishing s1 and s2
      */
-    std::vector< std::shared_ptr< std::vector<int> > > getDistTraces(FsmNode& s1,
-                                                                     FsmNode& s2);
-    
+    std::vector< std::shared_ptr< std::vector<int> > > getDistTraces(FsmNode const &s1,
+                                                                     FsmNode const &s2);
 };
 #endif //FSM_FSM_DFSM_H_

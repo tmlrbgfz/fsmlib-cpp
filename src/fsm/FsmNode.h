@@ -22,6 +22,7 @@ class FsmTransition;
 class FsmPresentationLayer;
 class OutputTree;
 class Tree;
+class TreeNode;
 class OutputTrace;
 class InputTrace;
 class OFSMTable;
@@ -29,16 +30,16 @@ class PkTable;
 class DFSMTableRow;
 class TraceSegment;
 
-class FsmNode : public std::enable_shared_from_this<FsmNode>
+class FsmNode
 {
 private:
-    std::vector<std::shared_ptr<FsmTransition> > transitions;
+    std::vector<FsmTransition*> transitions;
 	int id;
 	std::string name;
 	bool visited;
 	int color;
-	std::shared_ptr<FsmPresentationLayer> presentationLayer;
-	std::shared_ptr<std::pair<std::shared_ptr<FsmNode>, std::shared_ptr<FsmNode>>> derivedFromPair;
+	FsmPresentationLayer const *presentationLayer;
+	std::pair<FsmNode*, FsmNode*> derivedFromPair;
     
     bool isInitialNode;
     
@@ -46,37 +47,42 @@ private:
      *  List of requirements satisfied by the node
      */
     std::vector<std::string> satisfies;
+	std::pair<OutputTree, std::unordered_map<TreeNode*, FsmNode*>> apply(const InputTrace& itrc) const;
     
 public:
 	const static int white = 0;
 	const static int grey = 1;
 	const static int black = 2;
 	FsmNode(const int id,
-            const std::shared_ptr<FsmPresentationLayer> presentationLayer);
+            FsmPresentationLayer const *presentationLayer);
 	FsmNode(const int id,
             const std::string & name,
-            const std::shared_ptr<FsmPresentationLayer> presentationLayer);
+            FsmPresentationLayer const *presentationLayer);
+	
+	FsmNode(FsmNode const &other) = default;
+	FsmNode(FsmNode &&other) = default;
     
     /**
      * Add a transition to the node. If another transition with the same label and
      * the same target node already exists, the new transition is silently ignored.
      */
-	void addTransition(std::shared_ptr<FsmTransition> transition);
+	void addTransition(FsmTransition *transition);
     
     
-    std::vector<std::shared_ptr<FsmTransition> >& getTransitions();
+    std::vector<FsmTransition*>& getTransitions();
+    std::vector<FsmTransition*> const & getTransitions() const;
     int getId() const;
     void setId(const int id) { this->id = id; }
 	std::string getName() const;
 	bool hasBeenVisited() const;
 	void setVisited();
     void setUnvisited();
-	void setPair(const std::shared_ptr<FsmNode> l, const std::shared_ptr<FsmNode> r);
-	void setPair(const std::shared_ptr<std::pair<std::shared_ptr<FsmNode>, std::shared_ptr<FsmNode>>> p);
-	bool isDerivedFrom(const std::shared_ptr<std::pair<std::shared_ptr<FsmNode>, std::shared_ptr<FsmNode>>> p) const;
-	std::shared_ptr<std::pair<std::shared_ptr<FsmNode>, std::shared_ptr<FsmNode>>> getPair() const;
-	std::shared_ptr<FsmNode> apply(const int e, OutputTrace & o);
-	OutputTree apply(const InputTrace & itrc, bool markAsVisited = false);
+	void setPair(FsmNode *l, FsmNode *r);
+	void setPair(std::pair<FsmNode*, FsmNode*> const &p);
+	bool isDerivedFrom(std::pair<FsmNode*, FsmNode*> const &p) const;
+	std::pair<FsmNode*, FsmNode*> getPair() const;
+	FsmNode * apply(const int e, OutputTrace & o) const;
+	OutputTree apply(const InputTrace & itrc, bool markAsVisited);
 
 	/**
 	Return the set of FsmNode instances reachable from this node after
@@ -85,9 +91,9 @@ public:
 	@return Set of FsmNode instances reachable from this node via
 	input trace itrc.
 	*/
-	std::unordered_set<std::shared_ptr<FsmNode>> after(const InputTrace & itrc);
-    std::unordered_set<std::shared_ptr<FsmNode>> after(const std::vector<int> & itrc);
-    std::unordered_set<std::shared_ptr<FsmNode>> after(const std::shared_ptr<TraceSegment> seg);
+	std::unordered_set<FsmNode*> after(InputTrace const &itrc);
+    std::unordered_set<FsmNode*> after(std::vector<int> const &itrc);
+    std::unordered_set<FsmNode*> after(std::shared_ptr<TraceSegment> const seg);
 
 	/**
 	Return list of nodes that can be reached from this node
@@ -99,13 +105,13 @@ public:
 	list of target nodes reachable from this node under input x
 	otherwise.
 	*/
-	std::vector<std::shared_ptr<FsmNode>> after(const int x);
-	std::unordered_set<std::shared_ptr<FsmNode>> afterAsSet(const int x);
+	std::vector<FsmNode*> after(const int x) const;
+	std::unordered_set<FsmNode*> afterAsSet(const int x) const;
 	void setColor(const int color);
-	int getColor();
-	std::shared_ptr<DFSMTableRow> getDFSMTableRow(const int maxInput);
-	bool distinguished(const std::shared_ptr<FsmNode> otherNode, const std::vector<int>& iLst);
-	std::shared_ptr<InputTrace> distinguished(const std::shared_ptr<FsmNode> otherNode, std::shared_ptr<Tree> w);
+	int getColor() const;
+	std::shared_ptr<DFSMTableRow> getDFSMTableRow(const int maxInput) const;
+	bool distinguished(FsmNode const *otherNode, const std::vector<int>& iLst) const;
+	std::unique_ptr<InputTrace> distinguished(FsmNode const *otherNode, Tree const *w) const;
 
 	/**
 	Calculate a distinguishing input trace for a DFSM node. The algorithm is based
@@ -115,7 +121,7 @@ public:
 	@param maxInput  Maximal value of the input alphabet with range 0..maxInput
 	@return Distinguishing trace as instance of InputTrace
 	*/
-	InputTrace calcDistinguishingTrace(const std::shared_ptr<FsmNode> otherNode, const std::vector<std::shared_ptr<PkTable>>& pktblLst, const int maxInput);
+	InputTrace calcDistinguishingTrace(FsmNode *otherNode, const std::vector<std::shared_ptr<PkTable>>& pktblLst, const int maxInput);
 
 	/**
 	Calculate a distinguishing input trace for a (potentially nondeterministic)
@@ -126,7 +132,7 @@ public:
 	@param maxOutput Maximal value of the output alphabet in range 0..maxOutput
 	@return Distinguishing trace as instance of InputTrace
 	*/
-	InputTrace calcDistinguishingTrace(const std::shared_ptr<FsmNode> otherNode, const std::vector<std::shared_ptr<OFSMTable>>& ofsmTblLst, const int maxInput, const int maxOutput);
+	InputTrace calcDistinguishingTrace(FsmNode const *otherNode, const std::vector<std::shared_ptr<OFSMTable>>& ofsmTblLst, const int maxInput, const int maxOutput) const;
 	bool isObservable() const;
 
 	/**
@@ -147,12 +153,13 @@ public:
      */
     void accept(FsmVisitor& v);
     void accept(FsmVisitor& v,
-                std::deque< std::shared_ptr<FsmNode> >& bfsq);
+                std::deque< FsmNode* >& bfsq);
     
     /**
      *  Get list of requirements satisified by the node
      */
     std::vector<std::string>& getSatisfied() { return satisfies; }
+    std::vector<std::string> const & getSatisfied() const { return satisfies; }
     void addSatisfies(std::string req) { satisfies.push_back(req); }
 
     

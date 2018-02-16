@@ -11,13 +11,13 @@
 
 using namespace std;
 
-PkTable::PkTable(const int numStates, const int maxInput, const shared_ptr<FsmPresentationLayer> presentationLayer)
+PkTable::PkTable(const int numStates, const int maxInput, FsmPresentationLayer const *presentationLayer)
 	: s2c(numStates), maxInput(maxInput), presentationLayer(presentationLayer)
 {
 	rows.insert(rows.end(), numStates, nullptr);
 }
 
-PkTable::PkTable(const int numStates, const int maxInput, const vector<shared_ptr<PkTableRow>> rows, const shared_ptr<FsmPresentationLayer> presentationLayer)
+PkTable::PkTable(const int numStates, const int maxInput, const vector<shared_ptr<PkTableRow>> rows, FsmPresentationLayer const *presentationLayer)
 	: rows(rows), s2c(numStates), maxInput(maxInput), presentationLayer(presentationLayer)
 {
 
@@ -182,7 +182,7 @@ shared_ptr<PkTable> PkTable::getPkPlusOneTable() const
 Dfsm PkTable::toFsm(string name, const int maxOutput)
 {
     string minFsmName("");
-	vector<shared_ptr<FsmNode>> nodeLst;
+	std::vector<std::unique_ptr<FsmNode>> nodeLst;
     
     /* We need a new presentation layer.
      * Input and output names are the same as for the original FSM,
@@ -195,21 +195,20 @@ Dfsm PkTable::toFsm(string name, const int maxOutput)
         minState2String.push_back(newName);
     }
     
-    shared_ptr<FsmPresentationLayer> minPl =
-    make_shared<FsmPresentationLayer>(presentationLayer->getIn2String(),
-                                      presentationLayer->getOut2String(),
-                                      minState2String);
+    std::unique_ptr<FsmPresentationLayer> minPl { new FsmPresentationLayer(presentationLayer->getIn2String(),
+                                                                           presentationLayer->getOut2String(),
+                                                                           minState2String) };
     
 
 	/*Create the FSM states, one for each class*/
 	for (int i = 0; i <= maxClassId(); ++i)
 	{
-		shared_ptr<FsmNode> newNode = make_shared<FsmNode>(i, "", minPl);
-		nodeLst.push_back(newNode);
+		nodeLst.emplace_back(new FsmNode(i, "", minPl.get()));
 	}
 
 	/*For each FSM state, add outgoing transitions*/
-	for (shared_ptr<FsmNode> srcNode : nodeLst)
+    std::vector<std::unique_ptr<FsmTransition>> newTransitions;
+	for (auto &srcNode : nodeLst)
 	{
 		int classId = srcNode->getId();
 		shared_ptr<PkTableRow> row = nullptr;
@@ -233,26 +232,28 @@ Dfsm PkTable::toFsm(string name, const int maxOutput)
             if ( cAux < 0 ) continue;
             
 			int cTarget = s2c.at(cAux);
-			shared_ptr<FsmNode> tgtNode = nullptr;
+			FsmNode *tgtNode = nullptr;
             
             // Find the new FsmNode in the minimised FSM
             // which has cTarget as node id
-			for (shared_ptr<FsmNode> node : nodeLst)
+			for (auto const &node : nodeLst)
 			{
 				if (node->getId() == cTarget)
 				{
-					tgtNode = node;
+					tgtNode = node.get();
 					break;
 				}
 			}
-			shared_ptr<FsmLabel> lbl = make_shared<FsmLabel>(x, y, minPl.get());
-			srcNode->addTransition(make_shared<FsmTransition>(srcNode,
-                                                              tgtNode,
-                                                              lbl));
+			std::unique_ptr<FsmLabel> lbl { new FsmLabel(x, y, minPl.get()) };
+            std::unique_ptr<FsmTransition> tr { new FsmTransition(srcNode.get(),
+                                                                  tgtNode,
+                                                                  std::move(lbl)) };
+			srcNode->addTransition(tr.get());
+            newTransitions.push_back(std::move(tr));
 		}
 	}
 
-	return Dfsm(minFsmName, maxInput, maxOutput, nodeLst, minPl);
+	return Dfsm(minFsmName, maxInput, maxOutput, std::move(nodeLst), std::move(newTransitions), std::move(minPl));
 }
 
 string PkTable::getMembers(const int c) const
