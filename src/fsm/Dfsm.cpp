@@ -317,8 +317,7 @@ void Dfsm::createDfsmTransitionGraph(const string& fname) {
                 tgtNode = currentParsedNode;
                 std::unique_ptr<FsmLabel> lbl { new FsmLabel(x,0,presentationLayer.get()) };
                 std::unique_ptr<FsmTransition> tr { new FsmTransition(currentParsedNode,tgtNode,std::move(lbl)) };
-                transitions.push_back(std::move(tr));
-                currentParsedNode->addTransition(tr.get());
+                currentParsedNode->addTransition(std::move(tr));
             }
             else {
                 
@@ -359,8 +358,7 @@ void Dfsm::createDfsmTransitionGraph(const string& fname) {
                     if ( static_cast<bool>(y) ) {
                         std::unique_ptr<FsmLabel> lbl { new FsmLabel(x,y.value(),presentationLayer.get()) };
                         std::unique_ptr<FsmTransition> tr { new FsmTransition(currentParsedNode,tgtNode,std::move(lbl)) };
-                        transitions.push_back(std::move(tr));
-                        currentParsedNode->addTransition(tr.get());
+                        currentParsedNode->addTransition(std::move(tr));
                     }
                     
                 }
@@ -435,8 +433,7 @@ void Dfsm::createAtRandom()
                                       std::unique_ptr<FsmLabel>(new FsmLabel(input,
                                                                              output,
                                                                              presentationLayer.get()))) };
-            transitions.push_back(std::move(transition));
-            source->addTransition(transitions.back().get());
+            source->addTransition(std::move(transition));
         }
     }
 }
@@ -510,9 +507,8 @@ Dfsm::Dfsm(const string & fsmName,
            const int maxInput,
            const int maxOutput,
            std::vector<std::unique_ptr<FsmNode>> &&lst,
-           std::vector<std::unique_ptr<FsmTransition>> &&transitions,
            std::unique_ptr<FsmPresentationLayer> &&presentationLayer)
-: Fsm(fsmName, maxInput, maxOutput, std::move(lst), std::move(transitions), std::move(presentationLayer))
+: Fsm(fsmName, maxInput, maxOutput, std::move(lst), std::move(presentationLayer))
 {
     dfsmTable = nullptr;
 }
@@ -698,8 +694,7 @@ Fsm()
                 tr->addSatisfies(satisfie.asString());
             }
             
-            srcNode->addTransition(tr.get());
-            this->transitions.push_back(std::move(tr));
+            srcNode->addTransition(std::move(tr));
         }
         
     }
@@ -734,8 +729,7 @@ Fsm()
             if ( not inputs[x] ) {
                 std::unique_ptr<FsmLabel> theLabel { new FsmLabel(x,theNopNo,presentationLayer.get()) };
                 std::unique_ptr<FsmTransition> tr { new FsmTransition(n.get(),n.get(),std::move(theLabel)) };
-                n->addTransition(tr.get());
-                this->transitions.push_back(std::move(tr));
+                n->addTransition(std::move(tr));
             }
         }
         
@@ -925,8 +919,7 @@ Fsm()
                 tr->addSatisfies(satisfie.asString());
             }
             
-            srcNode->addTransition(tr.get());
-            this->transitions.push_back(std::move(tr));
+            srcNode->addTransition(std::move(tr));
         }
         
     }
@@ -961,8 +954,7 @@ Fsm()
             if ( not inputs[x] ) {
                 std::unique_ptr<FsmLabel> theLabel { new FsmLabel(x,theNopNo.value(),presentationLayer.get()) };
                 std::unique_ptr<FsmTransition> tr { new FsmTransition(n.get(),n.get(),std::move(theLabel)) };
-                n->addTransition(tr.get());
-                this->transitions.push_back(std::move(tr));
+                n->addTransition(std::move(tr));
             }
         }
         

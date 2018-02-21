@@ -109,8 +109,8 @@ void Fsm::parseLine(const string & line)
     }
     
     FsmLabel *lbl = new FsmLabel(input, output, presentationLayer.get());
-    transitions.emplace_back(new FsmTransition(currentParsedNode, nodes[target].get(), std::unique_ptr<FsmLabel>(lbl)));
-    currentParsedNode->addTransition(transitions.back().get());
+    std::unique_ptr<FsmTransition> transition { new FsmTransition(currentParsedNode, nodes[target].get(), std::unique_ptr<FsmLabel>(lbl)) };
+    currentParsedNode->addTransition(std::move(transition));
 }
 
 void Fsm::parseLineInitial (const string & line)
@@ -238,8 +238,8 @@ Fsm::Fsm(const Fsm& other) {
         for ( auto &tr : theOldFsmNodeSrc->getTransitions() ) {
             int tgtId = tr->getTarget()->getId();
             std::unique_ptr<FsmLabel> newLbl { new FsmLabel(*tr->getLabel()) };
-            transitions.emplace_back(new FsmTransition(theNewFsmNodeSrc,nodes[tgtId].get(),std::move(newLbl)));
-            theNewFsmNodeSrc->addTransition(transitions.back().get());
+            std::unique_ptr<FsmTransition> transition { new FsmTransition(theNewFsmNodeSrc,nodes[tgtId].get(),std::move(newLbl)) };
+            theNewFsmNodeSrc->addTransition(std::move(transition));
         }
     }
     
@@ -311,12 +311,10 @@ Fsm::Fsm(const string & fsmName,
          const int maxInput,
          const int maxOutput,
          std::vector<std::unique_ptr<FsmNode>> &&lst,
-         std::vector<std::unique_ptr<FsmTransition>> &&transitions,
          std::unique_ptr<FsmPresentationLayer> &&presentationLayer)
 :
 name(fsmName),
 nodes(std::move(lst)),
-transitions(std::move(transitions)),
 currentParsedNode(nullptr),
 maxInput(maxInput),
 maxOutput(maxOutput),
@@ -341,10 +339,10 @@ void Fsm::dumpFsm(ofstream & outputFile) const
 {
     for (unsigned int i = 0; i < nodes.size(); ++ i)
     {
-        auto const transitions = nodes.at(i)->getTransitions();
+        auto const &transitions = nodes.at(i)->getTransitions();
         for (unsigned int j = 0; j < transitions.size(); ++ j)
         {
-            FsmTransition const *tr = transitions.at(j);
+            FsmTransition const *tr = transitions.at(j).get();
             outputFile << i << " "
             << tr->getLabel()->getInput()
             << " " << tr->getLabel()->getOutput()
@@ -418,8 +416,6 @@ Fsm Fsm::intersect(const Fsm & f) const
     // control the breath-first search (BFS)
     std::deque<std::pair<FsmNode*, FsmNode*>> nodeList;
 
-    std::vector<std::unique_ptr<FsmTransition>> newTransitions;
-    
     // A list of new FSM states, each state created from a pair of
     // this-nodes and f-nodes. At the end of this operation,
     // the new FSM will be created from this list.
@@ -482,10 +478,10 @@ Fsm Fsm::intersect(const Fsm & f) const
         nSource->setVisited();
         
         // Loop over all transitions emanating from myCurrentNode
-        for (auto tr : myCurrentNode->getTransitions())
+        for (auto &tr : myCurrentNode->getTransitions())
         {
             // Loop over all transitions emanating from theirCurrentNode
-            for (auto trOther : theirCurrentNode->getTransitions())
+            for (auto &trOther : theirCurrentNode->getTransitions())
             {
                 /* If tr and trOther have identical labels, we can create a
                    transition for the new FSM to be created.
@@ -520,10 +516,10 @@ Fsm Fsm::intersect(const Fsm & f) const
                     }
                     
                     // Add transition from nSource to nTarget
-                    newTransitions.emplace_back(new FsmTransition(nSource,
-                                                                  nTarget,
-                                                                  tr->getLabel()->clone()));
-                    nSource->addTransition(newTransitions.back().get());
+                    std::unique_ptr<FsmTransition> transition { new FsmTransition(nSource,
+                                                                                  nTarget,
+                                                                                  tr->getLabel()->clone()) };
+                    nSource->addTransition(std::move(transition));
                     
                     /* Conditions for insertion of the target pair
                        into the nodeList:
@@ -548,7 +544,7 @@ Fsm Fsm::intersect(const Fsm & f) const
         return std::unique_ptr<FsmNode>(node);
     });
     
-    return Fsm(f.getName(), maxInput, maxOutput, std::move(newNodes), std::move(newTransitions), newPl->clone());
+    return Fsm(f.getName(), maxInput, maxOutput, std::move(newNodes), newPl->clone());
 }
 
 std::unique_ptr<Tree> Fsm::getStateCover()
@@ -628,8 +624,6 @@ Fsm Fsm::transformToObservableFSM() const
     // new FSM nodes, still to be processed by the algorithm
     vector<FsmNode*> bfsLst;
 
-    std::vector<std::unique_ptr<FsmTransition>> newTransitions;
-    
     // Map a newly created node to the set of nodes from the
     // original FSM, comprised in the new FSM state
     unordered_map<FsmNode*, unordered_set<FsmNode*>> node2NodeLabel;
@@ -704,7 +698,7 @@ Fsm Fsm::transformToObservableFSM() const
                     // For each node comprised by q, check
                     // its outgoing transitions, whether they are
                     // labelled by lbl
-                    for (auto tr : n->getTransitions())
+                    for (auto &tr : n->getTransitions())
                     {
                         if (*tr->getLabel() == *lbl)
                         {
@@ -750,8 +744,8 @@ Fsm Fsm::transformToObservableFSM() const
                     }
                     
                     // Create the transition from q to tgtNode
-                    newTransitions.emplace_back(new FsmTransition(q, tgtNode, std::move(lbl)));
-                    q->addTransition(newTransitions.back().get());
+                    std::unique_ptr<FsmTransition> transition { new FsmTransition(q, tgtNode, std::move(lbl)) };
+                    q->addTransition(std::move(transition));
                 }
             }
         }
@@ -761,7 +755,7 @@ Fsm Fsm::transformToObservableFSM() const
     std::transform(nodeLst.begin(), nodeLst.end(), std::back_inserter(newNodes), [](FsmNode * const &node){
         return std::unique_ptr<FsmNode>(node);
     });
-    return Fsm(name + "_O", maxInput, maxOutput, std::move(newNodes), std::move(newTransitions), obsPl->clone());
+    return Fsm(name + "_O", maxInput, maxOutput, std::move(newNodes), obsPl->clone());
 }
 
 bool Fsm::isObservable() const {
@@ -1357,7 +1351,6 @@ Fsm::createRandomFsm(const string & fsmName,
     // All nodes are marked 'white' by the costructor - this is now
     // used to mark unreachable states which have to be made reachable
     std::vector<std::unique_ptr<FsmNode> > lst;
-    std::vector<std::unique_ptr<FsmTransition>> newTransitions;
     for ( int n = 0; n <= maxState; n++ ) {
         lst.emplace_back(new FsmNode(n,fsmName,pl.get()));
     }
@@ -1403,10 +1396,10 @@ Fsm::createRandomFsm(const string & fsmName,
         if ( whiteNode != nullptr ) {
             x0 = rand() % (maxInput+1);
             y0 = rand() % (maxOutput+1);
-            newTransitions.emplace_back(new FsmTransition(srcNode,whiteNode,
-                                       std::unique_ptr<FsmLabel>(new FsmLabel(x0,y0,pl.get()))));
+            std::unique_ptr<FsmTransition> transition { new FsmTransition(srcNode,whiteNode,
+                                                            std::unique_ptr<FsmLabel>(new FsmLabel(x0,y0,pl.get()))) };
             // Add transition to adjacency list of the source node
-            srcNode->addTransition(newTransitions.back().get());
+            srcNode->addTransition(std::move(transition));
             thisNode->setColor(FsmNode::black);
             bfsq.push_back(thisNode);
         }
@@ -1433,15 +1426,15 @@ Fsm::createRandomFsm(const string & fsmName,
                     tgtNode->setColor(FsmNode::black);
                     bfsq.push_back(tgtNode);
                 }
-                newTransitions.emplace_back(new FsmTransition(srcNode,tgtNode,
-                                           std::unique_ptr<FsmLabel>(new FsmLabel(x,y,pl.get()))));
+                std::unique_ptr<FsmTransition> transition { new FsmTransition(srcNode,tgtNode,
+                                                                std::unique_ptr<FsmLabel>(new FsmLabel(x,y,pl.get()))) };
                 // Add transition to adjacency list of the source node
-                srcNode->addTransition(newTransitions.back().get());
+                srcNode->addTransition(std::move(transition));
             }
         }
     }
     
-    return std::unique_ptr<Fsm>(new Fsm(fsmName,maxInput,maxOutput,std::move(lst),std::move(newTransitions),std::move(pl)));
+    return std::unique_ptr<Fsm>(new Fsm(fsmName,maxInput,maxOutput,std::move(lst),std::move(pl)));
 }
 
 std::unique_ptr<Fsm> Fsm::createMutant(const std::string & fsmName,
@@ -1459,15 +1452,14 @@ std::unique_ptr<Fsm> Fsm::createMutant(const std::string & fsmName,
     
     // Now add transitions that correspond exactly to the transitions in
     // this FSM
-    std::vector<std::unique_ptr<FsmTransition>> newTransitions;
     for ( int n = 0; n <= maxState; n++ ) {
         auto theNewFsmNodeSrc = lst[n].get();
         auto theOldFsmNodeSrc = nodes[n].get();
-        for ( auto tr : theOldFsmNodeSrc->getTransitions() ) {
+        for ( auto &tr : theOldFsmNodeSrc->getTransitions() ) {
             int tgtId = tr->getTarget()->getId();
             auto newLbl = tr->getLabel()->clone();
-            newTransitions.emplace_back(new FsmTransition(theNewFsmNodeSrc,lst[tgtId].get(),std::move(newLbl)));
-            theNewFsmNodeSrc->addTransition(newTransitions.back().get());
+            std::unique_ptr<FsmTransition> transition { new FsmTransition(theNewFsmNodeSrc,lst[tgtId].get(),std::move(newLbl)) };
+            theNewFsmNodeSrc->addTransition(std::move(transition));
         }
     }
     
@@ -1476,18 +1468,18 @@ std::unique_ptr<Fsm> Fsm::createMutant(const std::string & fsmName,
         int srcNodeId = rand() % (maxState+1);
         int newTgtNodeId = rand() % (maxState+1);
         int trNo = rand() % lst[srcNodeId]->getTransitions().size();
-        auto tr = lst[srcNodeId]->getTransitions()[trNo];
+        auto &tr = lst.at(srcNodeId)->getTransitions().at(trNo);
         if ( tr->getTarget()->getId() == newTgtNodeId ) {
             newTgtNodeId = (newTgtNodeId+1) % (maxState+1);
         }
-        lst[srcNodeId]->getTransitions()[trNo]->setTarget(lst[newTgtNodeId].get());
+        lst.at(srcNodeId)->getTransitions().at(trNo)->setTarget(lst.at(newTgtNodeId).get());
     }
     
     // Now add output faults to the new machine
     for (size_t of = 0; of < numOutputFaults; of++ ) {
         int srcNodeId = rand() % (maxState+1);
         int trNo = rand() % lst[srcNodeId]->getTransitions().size();
-        auto tr = lst[srcNodeId]->getTransitions()[trNo];
+        auto &tr = lst.at(srcNodeId)->getTransitions().at(trNo);
         int theInput = tr->getLabel()->getInput();
         int newOutVal = rand() % (maxOutput+1);
         int originalNewOutVal = rand() % (maxOutput+1);
@@ -1500,7 +1492,7 @@ std::unique_ptr<Fsm> Fsm::createMutant(const std::string & fsmName,
             
             newOutValOk = true;
             
-            for ( auto trOther : lst[srcNodeId]->getTransitions() ) {
+            for ( auto &trOther : lst[srcNodeId]->getTransitions() ) {
                 if ( tr == trOther ) continue;
                 if ( trOther->getTarget()->getId() != tr->getTarget()->getId() )
                     continue;
@@ -1526,7 +1518,7 @@ std::unique_ptr<Fsm> Fsm::createMutant(const std::string & fsmName,
         }
     }
     
-    return std::unique_ptr<Fsm>(new Fsm(fsmName,maxInput,maxOutput,std::move(lst), std::move(newTransitions), std::move(newPresentationLayer)));
+    return std::unique_ptr<Fsm>(new Fsm(fsmName,maxInput,maxOutput,std::move(lst), std::move(newPresentationLayer)));
 }
 
 

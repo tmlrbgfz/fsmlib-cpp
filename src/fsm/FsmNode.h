@@ -33,7 +33,7 @@ class TraceSegment;
 class FsmNode
 {
 private:
-    std::vector<FsmTransition*> transitions;
+    std::vector<std::unique_ptr<FsmTransition>> transitions;
 	int id;
 	std::string name;
 	bool visited;
@@ -66,11 +66,11 @@ public:
      * Add a transition to the node. If another transition with the same label and
      * the same target node already exists, the new transition is silently ignored.
      */
-	void addTransition(FsmTransition *transition);
+	void addTransition(std::unique_ptr<FsmTransition> &&transition);
     
     
-    std::vector<FsmTransition*>& getTransitions();
-    std::vector<FsmTransition*> const & getTransitions() const;
+    std::vector<std::unique_ptr<FsmTransition>>& getTransitions();
+    std::vector<std::unique_ptr<FsmTransition>> const & getTransitions() const;
     int getId() const;
     void setId(const int id) { this->id = id; }
 	std::string getName() const;

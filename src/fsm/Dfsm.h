@@ -130,7 +130,6 @@ public:
          const int maxInput,
          const int maxOutput,
          std::vector<std::unique_ptr<FsmNode>> &&lst,
-         std::vector<std::unique_ptr<FsmTransition>> &&transitions,
          std::unique_ptr<FsmPresentationLayer> &&presentationLayer);
 
 	/**

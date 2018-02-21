@@ -66,7 +66,7 @@ OFSMTable::OFSMTable(vector<std::unique_ptr<FsmNode>> const &nodes, const int ma
 	{
 		rows.push_back(make_shared<OFSMTableRow>(maxInput, maxOutput));
 
-		for (auto tr : nodes.at(i)->getTransitions())
+		for (auto &tr : nodes.at(i)->getTransitions())
 		{
 			int x = tr->getLabel()->getInput();
 			int y = tr->getLabel()->getOutput();
@@ -276,7 +276,6 @@ Fsm OFSMTable::toFsm(const string & name) const
 	}
 
 	/* For each FSM state, add outgoing transitions */
-	std::vector<std::unique_ptr<FsmTransition>> newTransitions;
 	for (auto &srcNode : nodeLst)
 	{
 		/*
@@ -332,8 +331,7 @@ Fsm OFSMTable::toFsm(const string & name) const
 							std::unique_ptr<FsmTransition> tr { new FsmTransition(srcNode.get(),
 																				  tgtNode.get(),
 																				  std::unique_ptr<FsmLabel>(new FsmLabel(x, y, minPl.get()))) };
-							srcNode->addTransition(tr.get());
-							newTransitions.push_back(std::move(tr));
+							srcNode->addTransition(std::move(tr));
 							break;
 						}
 					}
@@ -341,7 +339,7 @@ Fsm OFSMTable::toFsm(const string & name) const
 			}
 		}
 	}
-	return Fsm(minFsmName, maxInput, maxOutput, std::move(nodeLst), std::move(newTransitions), std::move(minPl));
+	return Fsm(minFsmName, maxInput, maxOutput, std::move(nodeLst), std::move(minPl));
 }
 
 ostream & operator<<(ostream & out, const OFSMTable & ofsmTable)

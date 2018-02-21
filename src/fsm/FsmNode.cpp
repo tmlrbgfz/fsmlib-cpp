@@ -39,12 +39,12 @@ FsmNode::FsmNode(const int id, const string & name,
     this->name = name;
 }
 
-void FsmNode::addTransition(FsmTransition *transition)
+void FsmNode::addTransition(std::unique_ptr<FsmTransition> &&transition)
 {
     
     // Do not accept another transition with the same label and the
     // the same target node
-    for ( auto tr : transitions ) {
+    for ( auto &tr : transitions ) {
         if ( tr->getTarget() == transition->getTarget()
             and
             tr->getLabel() == transition->getLabel() ) {
@@ -52,15 +52,15 @@ void FsmNode::addTransition(FsmTransition *transition)
         }
     }
     
-    transitions.push_back(transition);
+    transitions.emplace_back(std::move(transition));
 }
 
-std::vector<FsmTransition*>& FsmNode::getTransitions()
+std::vector<std::unique_ptr<FsmTransition>>& FsmNode::getTransitions()
 {
     return transitions;
 }
 
-std::vector<FsmTransition*> const& FsmNode::getTransitions() const {
+std::vector<std::unique_ptr<FsmTransition>> const& FsmNode::getTransitions() const {
     return transitions;
 }
 
@@ -161,9 +161,9 @@ std::pair<OutputTree, std::unordered_map<TreeNode*, FsmNode*>> FsmNode::apply(co
             tnl.pop_front();
             
             FsmNode *thisState = t2f.at(thisTreeNode);
-            auto const theseTransitions = [thisState,this](FsmNode *ptr){
+            auto const &theseTransitions = [this](FsmNode *ptr)->std::vector<std::unique_ptr<FsmTransition>> const &{
                 if(ptr != nullptr) {
-                    return thisState->getTransitions();
+                    return ptr->getTransitions();
                 } else {
                     return this->getTransitions();
                 }
@@ -486,7 +486,7 @@ bool FsmNode::isDeterministic() const
 
 ostream & operator<<(ostream & out, const FsmNode & node)
 {
-    for (auto tr : node.transitions)
+    for (auto &tr : node.transitions)
     {
         out << *tr << endl;
     }

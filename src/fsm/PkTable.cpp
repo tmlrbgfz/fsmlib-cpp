@@ -207,7 +207,6 @@ Dfsm PkTable::toFsm(string name, const int maxOutput)
 	}
 
 	/*For each FSM state, add outgoing transitions*/
-    std::vector<std::unique_ptr<FsmTransition>> newTransitions;
 	for (auto &srcNode : nodeLst)
 	{
 		int classId = srcNode->getId();
@@ -248,12 +247,11 @@ Dfsm PkTable::toFsm(string name, const int maxOutput)
             std::unique_ptr<FsmTransition> tr { new FsmTransition(srcNode.get(),
                                                                   tgtNode,
                                                                   std::move(lbl)) };
-			srcNode->addTransition(tr.get());
-            newTransitions.push_back(std::move(tr));
+			srcNode->addTransition(std::move(tr));
 		}
 	}
 
-	return Dfsm(minFsmName, maxInput, maxOutput, std::move(nodeLst), std::move(newTransitions), std::move(minPl));
+	return Dfsm(minFsmName, maxInput, maxOutput, std::move(nodeLst), std::move(minPl));
 }
 
 string PkTable::getMembers(const int c) const
