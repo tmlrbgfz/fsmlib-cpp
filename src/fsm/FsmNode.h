@@ -93,7 +93,7 @@ public:
 	*/
 	std::unordered_set<FsmNode*> after(InputTrace const &itrc);
     std::unordered_set<FsmNode*> after(std::vector<int> const &itrc);
-    std::unordered_set<FsmNode*> after(std::shared_ptr<TraceSegment> const seg);
+    std::unordered_set<FsmNode*> after(TraceSegment const &seg);
 
 	/**
 	Return list of nodes that can be reached from this node

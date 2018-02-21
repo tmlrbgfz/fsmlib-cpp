@@ -52,21 +52,13 @@ private:
      *   distTraces[n][m] contains a vector of pointers to
      *   traces distinguishing this from FsmNode number n
      */
-    std::vector< std::vector< std::vector< std::shared_ptr< std::vector<int> > > > > distTraces;
+    std::vector< std::vector< std::vector< std::vector<int> > > > distTraces;
     
     void initDistTraces();
     
-    std::vector< std::shared_ptr< std::vector<int> > > calcDistTraces(FsmNode& s1,
-                                                                      FsmNode& s2);
-    
-    std::vector< std::shared_ptr< std::vector<int> > > calcDistTraces(size_t l,
-                                                                      std::shared_ptr< std::vector<int> > trc,
-                                                                      int id1,
-                                                                      int id2);
-    
-    std::vector< std::shared_ptr< std::vector<int> > > calcDistTraces(std::shared_ptr< std::vector<int> > trc,
-                                                                      int id1,
-                                                                      int id2);
+    std::vector< std::vector<int> > calcDistTraces(FsmNode& s1, FsmNode& s2);
+    std::vector< std::vector<int> > calcDistTraces(size_t l, std::vector<int> const &trc, int id1, int id2);
+    std::vector< std::vector<int> > calcDistTraces(std::vector<int> const &trc, int id1, int id2);
 
 public:
 	/**
@@ -437,7 +429,6 @@ public:
     /**
      * Return the vector of shortest traces distinguishing s1 and s2
      */
-    std::vector< std::shared_ptr< std::vector<int> > > getDistTraces(FsmNode const &s1,
-                                                                     FsmNode const &s2);
+    std::vector< std::vector<int> > getDistTraces(FsmNode const &s1, FsmNode const &s2) const;
 };
 #endif //FSM_FSM_DFSM_H_

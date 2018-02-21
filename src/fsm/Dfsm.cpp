@@ -387,22 +387,10 @@ void Dfsm::createDfsmTransitionGraph(const string& fname) {
 }
 
 void Dfsm::initDistTraces() {
-    
     distTraces.clear();
-    
-    for ( size_t n = 0; n < size(); n++ ) {
-        // Create empty vector of for row n, to be extended in
-        // the inner loop
-        vector< vector< shared_ptr< vector<int> > > > thisRow;
-        for ( size_t m = 0; m < size(); m++ ) {
-            // Create empty vector of pointers to traces
-            vector< shared_ptr< vector<int> > > v;
-            thisRow.push_back(v);
-        }
-        // Add thisRow to distTraces
-        distTraces.push_back(thisRow);
-    }
-    
+    vector< vector< vector<int> > > oneRow;
+    oneRow.resize(size());
+    distTraces.resize(size(), oneRow);
 }
 
 Dfsm::Dfsm(const string & fname,
@@ -1624,7 +1612,7 @@ void Dfsm::calculateDistMatrix() {
             // Skip indistinguishable nodes
             if ( not distinguishable(*nodes[n], *nodes[m]) ) continue;
             
-            vector< shared_ptr< vector<int> > > u = calcDistTraces(*nodes[n],*nodes[m]);
+            vector< vector<int> > u = calcDistTraces(*nodes[n],*nodes[m]);
             distTraces[n][m] = u;
             distTraces[m][n] = u;
             
@@ -1634,34 +1622,28 @@ void Dfsm::calculateDistMatrix() {
     
 }
 
-vector< shared_ptr< vector<int> > >  Dfsm::calcDistTraces(shared_ptr< vector<int> > trc,
-                                                          int id1,
-                                                          int id2) {
+vector< vector<int> >  Dfsm::calcDistTraces(vector<int> const &trc, int id1, int id2) {
     
-    vector< shared_ptr< vector<int> > > v;
+    vector< vector<int> > v;
     
     for ( int x = 0; x <= maxInput; x++ ) {
         int y1 = dfsmTable->getRow(id1)->getioSection()[x];
         int y2 = dfsmTable->getRow(id2)->getioSection()[x];
         
         if ( y1 != y2 ) {
-            shared_ptr< vector<int> > newTrc = make_shared< vector<int> >(*trc);
-            newTrc->push_back(x);
+            vector<int> newTrc(trc);
+            newTrc.push_back(x);
             v.push_back(newTrc);
         }
     }
     
     return v;
-    
 }
 
-vector< shared_ptr< vector<int> > > Dfsm::calcDistTraces(size_t l,
-                                                         shared_ptr< vector<int> > trc,
-                                                         int id1,
-                                                         int id2) {
+vector< vector<int> > Dfsm::calcDistTraces(size_t l, vector<int> const &trc, int id1, int id2) {
     if ( l == 0 ) return calcDistTraces(trc,id1,id2);
     
-    vector< shared_ptr< vector<int> > > v;
+    vector< vector<int> > v;
     shared_ptr<PkTable> thisPkTbl = pktblLst[l];
     shared_ptr<PkTable> prevPkTbl = pktblLst[l-1];
     
@@ -1670,22 +1652,18 @@ vector< shared_ptr< vector<int> > > Dfsm::calcDistTraces(size_t l,
         int idNext2 = thisPkTbl->getRow(id2)->getI2PMap()[x];
 
         if ( prevPkTbl->getClass(idNext1) != prevPkTbl->getClass(idNext2) ) {
-            shared_ptr< vector<int> > newTrc = make_shared< vector<int> >(*trc);
-            newTrc->push_back(x);
-            vector< shared_ptr< vector<int> > > w = calcDistTraces(l-1,newTrc,idNext1,idNext2);
+            vector<int> newTrc(trc);
+            newTrc.push_back(x);
+            vector< vector<int> > w = calcDistTraces(l-1,newTrc,idNext1,idNext2);
             v.insert(v.end(),w.begin(),w.end());
         }
-        
     }
-    
+
     return v;
-    
 }
 
 
-vector< shared_ptr< vector<int> > > Dfsm::calcDistTraces(FsmNode& s1,
-                                                         FsmNode& s2) {
-    
+vector< vector<int> > Dfsm::calcDistTraces(FsmNode& s1, FsmNode& s2) {
     int id1 = s1.getId();
     int id2 = s2.getId();
     
@@ -1698,13 +1676,10 @@ vector< shared_ptr< vector<int> > > Dfsm::calcDistTraces(FsmNode& s1,
             break;
     }
     
-    return calcDistTraces(l,make_shared< vector<int> >(),id1,id2);
+    return calcDistTraces(l,{},id1,id2);
 }
 
 
-vector< shared_ptr< vector<int> > > Dfsm::getDistTraces(FsmNode const &s1,
-                                                        FsmNode const &s2) {
-    
-    return distTraces[s1.getId()][s2.getId()];
-    
+vector< vector<int> > Dfsm::getDistTraces(FsmNode const &s1, FsmNode const &s2) const {
+    return distTraces.at(s1.getId()).at(s2.getId());
 }

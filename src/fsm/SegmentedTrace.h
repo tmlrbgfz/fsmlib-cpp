@@ -16,14 +16,14 @@
 class TraceSegment {
     
 private:
-    std::shared_ptr< std::vector<int> > segment;
+    std::vector<int> segment;
     size_t prefix;
     FsmNode *tgtNode;
     
 public:
     
     TraceSegment();
-    TraceSegment(std::shared_ptr< std::vector<int> > segment,
+    TraceSegment(std::vector<int> const &segment,
                  size_t prefix = std::string::npos,
                  FsmNode *tgtNode = nullptr);
     
@@ -34,16 +34,17 @@ public:
     
     size_t getPrefix() const { return prefix; }
     
-    std::shared_ptr< std::vector<int> > get() { return segment; }
+    std::vector<int> const &get() const { return segment; }
+    std::vector<int> &get() { return segment; }
     
     std::vector<int> getCopy() const;
     Trace getAsTrace(std::unique_ptr<FsmPresentationLayer> && presentationLayer) const;
     
     size_t size() const;
     
-    int at(size_t n);
+    int at(size_t n) const;
     
-    FsmNode *getTgtNode() { return tgtNode; }
+    FsmNode *getTgtNode() const { return tgtNode; }
     void setTgtNode(FsmNode *tgtNode) { this->tgtNode = tgtNode; }
     
     friend std::ostream & operator<<(std::ostream & out, const TraceSegment& fsm);
@@ -53,30 +54,38 @@ class SegmentedTrace
 {
 private:
     
-    std::deque< std::shared_ptr<TraceSegment> > segments;
+    std::deque< TraceSegment > segments;
     
 public:
     
-    SegmentedTrace(std::deque< std::shared_ptr<TraceSegment> > segments);
+    SegmentedTrace(std::deque< TraceSegment > const &segments);
     SegmentedTrace(const SegmentedTrace& other);
     
-    void add(std::shared_ptr<TraceSegment> seg);
+    void add(TraceSegment const &seg);
     
-    std::vector<int> getCopy();
+    std::vector<int> getCopy() const;
     
-    FsmNode *getTgtNode();
+    FsmNode *getTgtNode() const;
     
     size_t size() const { return segments.size(); }
-    
-    std::shared_ptr<TraceSegment> back() {
-         return (segments.empty()) ? nullptr : segments.back();
+
+    TraceSegment & back() {
+         return segments.back();
     }
     
-    std::shared_ptr<TraceSegment> front() {
-        return (segments.empty()) ? nullptr : segments.front();
+    TraceSegment & front() {
+        return segments.front();
+    }
+
+    TraceSegment const & back() const {
+         return segments.back();
     }
     
-    const std::deque< std::shared_ptr<TraceSegment> >& getSegments() const { return segments; }
+    TraceSegment const & front() const {
+        return segments.front();
+    }
+    
+    std::deque< TraceSegment > const & getSegments() const { return segments; }
     
     
     friend std::ostream & operator<<(std::ostream & out, const SegmentedTrace& fsm);

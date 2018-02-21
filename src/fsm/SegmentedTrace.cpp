@@ -8,12 +8,12 @@
 using namespace std;
 
 TraceSegment::TraceSegment() {
-    segment = make_shared< vector<int> >();
+    segment = vector<int>();
     prefix = string::npos;
     tgtNode = nullptr;
 }
 
-TraceSegment::TraceSegment(std::shared_ptr< std::vector<int> > segment,
+TraceSegment::TraceSegment(std::vector<int> const &segment,
                            size_t prefix,
                            FsmNode *tgtNode)
 {
@@ -22,7 +22,7 @@ TraceSegment::TraceSegment(std::shared_ptr< std::vector<int> > segment,
     this->tgtNode = tgtNode;
 }
 
-TraceSegment::TraceSegment(const TraceSegment& other) {
+TraceSegment::TraceSegment(TraceSegment const &other) {
     segment = other.segment;
     prefix = other.prefix;
     tgtNode = other.tgtNode;
@@ -36,7 +36,7 @@ void TraceSegment::setPrefix(size_t pref) {
 
  
 vector<int> TraceSegment::getCopy() const {
-    std::vector<int> w(segment->begin(), segment->begin() + std::min(prefix, segment->size()));
+    std::vector<int> w(segment.begin(), segment.begin() + std::min(prefix, segment.size()));
     return w;
 }
 
@@ -45,30 +45,30 @@ Trace TraceSegment::getAsTrace(std::unique_ptr<FsmPresentationLayer> &&presentat
 }
 
 size_t TraceSegment::size() const {
-    return (prefix == string::npos or prefix > segment->size()) ?
-             segment->size() : prefix;
+    return (prefix == string::npos or prefix > segment.size()) ?
+             segment.size() : prefix;
 }
 
-int TraceSegment::at(size_t n) {
+int TraceSegment::at(size_t n) const {
     
-    if ( n >= segment->size() ) return -1;
+    if ( n >= segment.size() ) return -1;
     if ( prefix != string::npos and prefix <= n ) return -1;
-    return segment->at(n);
+    return segment.at(n);
     
 }
 
 ostream & operator<<(ostream & out, const TraceSegment& seg)
 {
     
-    if ( seg.segment->size() == 0 ) {
+    if ( seg.segment.size() == 0 ) {
         out << "eps";
         return out;
     }
     
-    out << seg.segment->at(0);
+    out << seg.segment.at(0);
     
     for (size_t i = 1; i < seg.size(); i++ ) {
-        out << "." << seg.segment->at(i);
+        out << "." << seg.segment.at(i);
     }
         
     return out;
@@ -79,7 +79,7 @@ ostream & operator<<(ostream & out, const TraceSegment& seg)
 
 // **************************************************************************
 
-SegmentedTrace::SegmentedTrace(std::deque< std::shared_ptr<TraceSegment> > segments) {
+SegmentedTrace::SegmentedTrace(std::deque< TraceSegment > const &segments) {
     this->segments = segments;
 }
 
@@ -87,24 +87,24 @@ SegmentedTrace::SegmentedTrace(const SegmentedTrace& other) {
     segments = other.segments;
 }
 
-void SegmentedTrace::add(std::shared_ptr<TraceSegment> seg) {
+void SegmentedTrace::add(TraceSegment const &seg) {
     segments.push_back(seg);
 }
 
-vector<int> SegmentedTrace::getCopy() {
+vector<int> SegmentedTrace::getCopy() const {
     vector<int> v;
     for ( auto s : segments ) {
-        vector<int> svec = s->getCopy();
+        vector<int> svec = s.getCopy();
         v.insert(v.end(),svec.begin(),svec.end());
     }
     return v;
 }
 
-FsmNode *SegmentedTrace::getTgtNode() {
+FsmNode *SegmentedTrace::getTgtNode() const {
     
     if ( segments.size() == 0 ) return nullptr;
     
-    return segments.back()->getTgtNode();
+    return segments.back().getTgtNode();
     
 }
 
@@ -116,10 +116,10 @@ ostream & operator<<(ostream & out, const SegmentedTrace& trc)
         return out;
     }
     
-    out << *trc.segments.at(0);
+    out << trc.segments.at(0);
     
     for ( size_t i = 1; i < trc.segments.size(); i++ ) {
-        cout << "." << *trc.segments[i];
+        cout << "." << trc.segments[i];
     }
     return out;
     
@@ -132,11 +132,11 @@ bool operator==(SegmentedTrace const & trace1, SegmentedTrace const & trace2) {
     
     size_t len1 = 0;
     for ( size_t s = 0; s < trace1.size(); s++ ) {
-        len1 += trace1.segments.at(s)->size();
+        len1 += trace1.segments.at(s).size();
     }
     size_t len2 = 0;
     for ( size_t s = 0; s < trace2.size(); s++ ) {
-        len2 += trace2.segments.at(s)->size();
+        len2 += trace2.segments.at(s).size();
     }
     
     if ( len1 != len2 ) return false;
@@ -147,16 +147,16 @@ bool operator==(SegmentedTrace const & trace1, SegmentedTrace const & trace2) {
     size_t seg2Idx = 0;
 
     for ( size_t i = 0; i < len1; i++ ) {
-        if ( seg1Idx >= trace1.segments.at(seg1)->size() ) {
+        if ( seg1Idx >= trace1.segments.at(seg1).size() ) {
             seg1Idx = 0;
             seg1++;
         }
-        if ( seg2Idx >= trace2.segments.at(seg2)->size() ) {
+        if ( seg2Idx >= trace2.segments.at(seg2).size() ) {
             seg2Idx = 0;
             seg2++;
         }
-        if ( trace1.segments.at(seg1)->at(seg1Idx) !=
-            trace2.segments.at(seg2)->at(seg2Idx) ) {
+        if ( trace1.segments.at(seg1).at(seg1Idx) !=
+            trace2.segments.at(seg2).at(seg2Idx) ) {
             return false;
         }
         seg1Idx++;

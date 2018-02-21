@@ -507,7 +507,7 @@ static int insertionCosts(int trc1Costs, int trc2Costs) {
     return costMatrix[trc1Costs][trc2Costs];
 }
 
-static void addSHTraces(deque<pair<shared_ptr<SegmentedTrace>,shared_ptr<SegmentedTrace>>>  X,
+static void addSHTraces(deque<pair<SegmentedTrace,SegmentedTrace>>  X,
                         Dfsm& refDfsm,
                         Dfsm& distDfsm,
                         Tree &testSuiteTree,
@@ -516,10 +516,10 @@ static void addSHTraces(deque<pair<shared_ptr<SegmentedTrace>,shared_ptr<Segment
     
     // Add all traces from X-pairs, extended by distinguishing traces
     for ( const auto p : X ) {
-        const shared_ptr<SegmentedTrace> tr1 = p.first;
-        const shared_ptr<SegmentedTrace> tr2 = p.second;
-        FsmNode *s1 = tr1->getTgtNode();
-        FsmNode *s2 = tr2->getTgtNode();
+        SegmentedTrace const tr1 = p.first;
+        SegmentedTrace const tr2 = p.second;
+        FsmNode *s1 = tr1.getTgtNode();
+        FsmNode *s2 = tr2.getTgtNode();
         
 #if DBG
         cout << "============================================ " << endl;
@@ -559,28 +559,28 @@ static void addSHTraces(deque<pair<shared_ptr<SegmentedTrace>,shared_ptr<Segment
         // a distinguishing trace
         
         // Which are the candidates to distinguish s1 and s2 ?
-        vector< shared_ptr< vector<int> > > v01 = refDfsm.getDistTraces(*s1,*s2);
-        shared_ptr<SegmentedTrace> tr1Ext = make_shared<SegmentedTrace>(*tr1);
-        shared_ptr<SegmentedTrace> tr2Ext = make_shared<SegmentedTrace>(*tr2);
+        vector< vector<int> > v01 = refDfsm.getDistTraces(*s1,*s2);
+        SegmentedTrace tr1Ext(tr1);
+        SegmentedTrace tr2Ext(tr2);
         
-        shared_ptr< vector<int> > vBest = v01[0];
-        auto seg = make_shared<TraceSegment>(vBest);
-        tr1Ext->add(seg);
-        tr2Ext->add(seg);
+        vector<int> vBest = v01[0];
+        TraceSegment seg(vBest);
+        tr1Ext.add(seg);
+        tr2Ext.add(seg);
         
-        int bestEffect1 = testSuiteTree.tentativeAddToRoot(*tr1Ext);
-        int bestEffect2 = testSuiteTree.tentativeAddToRoot(*tr2Ext);
+        int bestEffect1 = testSuiteTree.tentativeAddToRoot(tr1Ext);
+        int bestEffect2 = testSuiteTree.tentativeAddToRoot(tr2Ext);
         
         for ( size_t i = 1; i < v01.size() and bestEffect1 + bestEffect2 > 0; i++ ) {
-            shared_ptr< vector<int> > vAux = v01[i];
-            seg = make_shared<TraceSegment>(vAux);
-            shared_ptr<SegmentedTrace> tr1Aux = make_shared<SegmentedTrace>(*tr1);
-            shared_ptr<SegmentedTrace> tr2Aux = make_shared<SegmentedTrace>(*tr2);
-            tr1Aux->add(seg);
-            tr2Aux->add(seg);
+            vector<int> vAux = v01[i];
+            seg = TraceSegment(vAux);
+            SegmentedTrace tr1Aux(tr1);
+            SegmentedTrace tr2Aux(tr2);
+            tr1Aux.add(seg);
+            tr2Aux.add(seg);
             
-            int effAux1 = testSuiteTree.tentativeAddToRoot(*tr1Aux);
-            int effAux2 = testSuiteTree.tentativeAddToRoot(*tr2Aux);
+            int effAux1 = testSuiteTree.tentativeAddToRoot(tr1Aux);
+            int effAux2 = testSuiteTree.tentativeAddToRoot(tr2Aux);
             
             if ( insertionCosts(effAux1, effAux2) < insertionCosts(bestEffect1, bestEffect2) ) {
                 vBest = vAux;
@@ -591,8 +591,8 @@ static void addSHTraces(deque<pair<shared_ptr<SegmentedTrace>,shared_ptr<Segment
             }
         }
         
-        vector<int> v1 = tr1Ext->getCopy();
-        vector<int> v2 = tr2Ext->getCopy();
+        vector<int> v1 = tr1Ext.getCopy();
+        vector<int> v2 = tr2Ext.getCopy();
         
         if ( bestEffect1 > 0 ) {
 #if DBG
@@ -979,32 +979,28 @@ static void safeHMethod(const shared_ptr<TestSuite> &testSuite) {
     IOListContainer::IOListBaseType Vvectors = Vcontainer.getIOLists();
     
     // Empty deque of pointers to segmented traces
-    deque< shared_ptr<SegmentedTrace> > Vtraces;
+    deque< SegmentedTrace > Vtraces;
     
     // Fill Vtraces with new instances of segmented traces,
     // each trace consisting of a single segment from V, together
     // with its target node.
     for ( const auto &v : Vvectors ) {
         FsmNode *tgtNode = *(s0->after(v).begin());
-        shared_ptr< vector<int> > vPtr =
-            make_shared< vector<int> >(v.begin(),v.end());
-        shared_ptr<TraceSegment> seg = make_shared<TraceSegment>(vPtr,
-                                                                 string::npos,
-                                                                 tgtNode);
-        deque< shared_ptr<TraceSegment> > d;
+        TraceSegment seg(v, string::npos, tgtNode);
+        deque< TraceSegment > d;
         d.push_back(seg);
-        Vtraces.push_back(make_shared<SegmentedTrace>(d));
+        Vtraces.emplace_back(d);
     }
     
     // Fill deque A with all pairs of Vtraces leading to distinct
     // target nodes
-    deque< pair< shared_ptr<SegmentedTrace>,shared_ptr<SegmentedTrace> > > A;
+    deque< pair< SegmentedTrace, SegmentedTrace > > A;
     for ( size_t i = 0; i < Vtraces.size(); i++ ) {
-        auto st1 = Vtraces.at(i);
-        auto tgtNode1 = st1->getTgtNode();
+        auto &st1 = Vtraces.at(i);
+        auto tgtNode1 = st1.getTgtNode();
         for ( size_t j = i+1; j < Vtraces.size(); j++ ) {
-            auto st2 = Vtraces.at(j);
-            if ( st2->getTgtNode() != tgtNode1 ) {
+            auto &st2 = Vtraces.at(j);
+            if ( st2.getTgtNode() != tgtNode1 ) {
                 A.push_back(make_pair(st1, st2));
             }
         }
@@ -1019,43 +1015,31 @@ static void safeHMethod(const shared_ptr<TestSuite> &testSuite) {
                                                 numAddStates + 1,
                                                 pl->clone());
     IOListContainer::IOListBaseType inputEnumVec = inputEnum.getIOLists();
-    deque< shared_ptr<TraceSegment> > inputEnumDeq;
+    deque< TraceSegment > inputEnumDeq;
     for ( const auto &v : inputEnumVec ) {
-        shared_ptr< vector<int> > vPtr =
-            make_shared< vector<int> >(v.begin(),v.end());
-        shared_ptr<TraceSegment> seg = make_shared<TraceSegment>(vPtr,
-                                                                 string::npos);
+        TraceSegment seg(v, string::npos);
         inputEnumDeq.push_back(seg);
     }
     
     // Create deque of all Vtraces extended by suffixes from inpuEnumDeque.
     // Each of these extended traces needs to be in the test suite. As a consequence,
     // all traces of the state cover are also contained in the test suite as prefixes.
-    deque< shared_ptr<SegmentedTrace> > V_inputEnumTraces;
-    for ( const auto v : Vtraces ) {
-        for ( const auto seg : inputEnumDeq ) {
+    deque< SegmentedTrace > V_inputEnumTraces;
+    for ( const auto &v : Vtraces ) {
+        for ( const auto &seg : inputEnumDeq ) {
             // Calculate the target node reached via v.seg
-            FsmNode *tgtNode =
-                *(v->getTgtNode()->after(*seg->get()).begin());
-            shared_ptr<TraceSegment> s = make_shared<TraceSegment>(*seg);
-            s->setTgtNode(tgtNode);
+            FsmNode *tgtNode = *(v.getTgtNode()->after(seg.get()).begin());
+            TraceSegment s(seg);
+            s.setTgtNode(tgtNode);
             // Append s to copy of v
-            shared_ptr<SegmentedTrace> u = make_shared<SegmentedTrace>(*v);
-            u->add(s);
+            SegmentedTrace u(v);
+            u.add(s);
             
             // Do not add u if it is already contained in Vtraces
-            bool containedInVtraces = false;
-            for ( const auto w : Vtraces ) {
-                if ( *w == *u ) {
-                    containedInVtraces = true;
-                    break;
-                }
-            }
-            
-            if ( not containedInVtraces ) {
+            if (  std::find(Vtraces.begin(), Vtraces.end(), u) == Vtraces.end() ) {
                 V_inputEnumTraces.push_back(u);
                 // Put u into the test suite
-                testSuiteTree->addToRoot(u->getCopy());
+                testSuiteTree->addToRoot(u.getCopy());
             }
         }
     }
@@ -1067,10 +1051,10 @@ static void safeHMethod(const shared_ptr<TestSuite> &testSuite) {
     
     // Create deque B containing all pairs of elements of Vtraces
     // V_inputEnumTraces, such that their target nodes differ
-    deque< pair< shared_ptr<SegmentedTrace>,shared_ptr<SegmentedTrace> > > B;
-    for ( const auto v : Vtraces ) {
-        for ( const auto u : V_inputEnumTraces ) {
-            if ( v->getTgtNode() != u->getTgtNode() ) {
+    deque< pair< SegmentedTrace,SegmentedTrace > > B;
+    for ( const auto &v : Vtraces ) {
+        for ( const auto &u : V_inputEnumTraces ) {
+            if ( v.getTgtNode() != u.getTgtNode() ) {
                 B.push_back(make_pair(v,u));
             }
         }
@@ -1082,26 +1066,25 @@ static void safeHMethod(const shared_ptr<TestSuite> &testSuite) {
     // differ. Recall that the alpha part is always contained in the
     // first segment of a segmented trace, while the input enumeration
     // is in the second segment.
-    deque< pair< shared_ptr<SegmentedTrace>,shared_ptr<SegmentedTrace> > > C;
-    for ( const auto v : V_inputEnumTraces ) {
-        shared_ptr<TraceSegment> seg = v->back();
+    deque< pair< SegmentedTrace,SegmentedTrace > > C;
+    for ( const auto &v : V_inputEnumTraces ) {
+        TraceSegment seg = v.back();
         // Loop over all true gamma-prefixes of v = alpha.gamma
-        for ( size_t prefix = seg->size() - 1; prefix > 0; prefix-- ) {
-            FsmNode *tgtNode1 = v->getTgtNode();
+        for ( size_t prefix = seg.size() - 1; prefix > 0; --prefix ) {
+            FsmNode *tgtNode1 = v.getTgtNode();
 
-            shared_ptr<TraceSegment> seg1 = v->front();
-            shared_ptr<TraceSegment> s1 = make_shared<TraceSegment>(*seg1);
-            shared_ptr<TraceSegment> s2 = make_shared<TraceSegment>(*seg);
-            s2->setPrefix(prefix);
+            TraceSegment seg1 = v.front();
+            TraceSegment s1(seg1);
+            TraceSegment s2(seg);
+            s2.setPrefix(prefix);
             
-            FsmNode *tgtNode2 =
-                *(s1->getTgtNode()->after(s2).begin());
+            FsmNode *tgtNode2 = *(s1.getTgtNode()->after(s2).begin());
             
             if ( tgtNode1 != tgtNode2 ) {
-                deque< std::shared_ptr<TraceSegment> > segs;
+                deque< TraceSegment > segs;
                 segs.push_back(s1);
                 segs.push_back(s2);
-                shared_ptr<SegmentedTrace> vPref = make_shared<SegmentedTrace>(segs);
+                SegmentedTrace vPref(segs);
                 C.push_back(make_pair(vPref,v));
             }
         }

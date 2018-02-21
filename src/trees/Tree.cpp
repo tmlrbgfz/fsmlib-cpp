@@ -252,8 +252,8 @@ int Tree::tentativeAddToRoot(SegmentedTrace& alpha) const {
     TreeNode const *n = root.get();
     
     for ( size_t i = 0; i < alpha.size(); i++ ) {
-        std::shared_ptr<TraceSegment> seg = alpha.getSegments().at(i);
-        r = n->tentativeAddToThisNode(seg->get()->cbegin(), seg->get()->cend(), n);
+        TraceSegment const &seg = alpha.getSegments().at(i);
+        r = n->tentativeAddToThisNode(seg.get().cbegin(), seg.get().cend(), n);
         if ( r > 0 ) return r;
     }
     

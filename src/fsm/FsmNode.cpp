@@ -213,8 +213,8 @@ std::unordered_set<FsmNode*> FsmNode::after(InputTrace const &itrc)
     return after(itrc.get());
     }
     
-std::unordered_set<FsmNode*> FsmNode::after(std::shared_ptr<TraceSegment> const seg) {
-    return after(*seg->get());
+std::unordered_set<FsmNode*> FsmNode::after(TraceSegment const &seg) {
+    return after(seg.get());
 }
 
 vector<FsmNode*> FsmNode::after(const int x) const
