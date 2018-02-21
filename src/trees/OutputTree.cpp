@@ -42,15 +42,29 @@ InputTrace OutputTree::getInputTrace() const
     return inputTrace;
 }
 
+std::vector<OutputTrace> OutputTree::getOutputTraces() const {
+    IOListContainer::IOListBaseType lli = getIOLists().getIOLists();
+	std::vector<OutputTrace> traces;
+	traces.reserve(lli.size());
+	for(unsigned int i = 0; i < lli.size(); ++i) {
+		traces.emplace_back(std::move(lli.at(i)), presentationLayer->clone());
+	}
+	return traces;
+}
+
 bool OutputTree::contains(OutputTree const &ot) const {
     
-    vector<IOTrace> myOutputs = toIOTrace();
-    vector<IOTrace> otherOutputs = ot.toIOTrace();
-    
-    // Check whether every trace of ot is also contained as a trace in this.
-	return std::all_of(otherOutputs.cbegin(), otherOutputs.cend(), [&myOutputs](IOTrace const &otherTrace)->bool{
-		return std::find(myOutputs.cbegin(), myOutputs.cend(), otherTrace) != myOutputs.cend();
-	});
+	InputTrace myInputs = getInputTrace();
+	InputTrace otherInputs = ot.getInputTrace();
+	std::vector<OutputTrace> myOutputs = getOutputTraces();
+	std::vector<OutputTrace> otherOutputs = ot.getOutputTraces();
+	if(myInputs != otherInputs or 
+	   myOutputs.size() < otherOutputs.size()) {
+		return false;
+	}
+	std::sort(myOutputs.begin(), myOutputs.end());
+	std::sort(otherOutputs.begin(), otherOutputs.end());
+	return std::includes(myOutputs.begin(), myOutputs.end(), otherOutputs.begin(), otherOutputs.end());
 }
 
 void OutputTree::toDot(ostream& out) const

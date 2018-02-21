@@ -4,6 +4,7 @@
  * Licensed under the EUPL V.1.1
  */
 #include "trees/TreeNode.h"
+#include <deque>
 
 using namespace std;
 
@@ -133,7 +134,7 @@ TreeEdge * TreeNode::hasEdge(TreeEdge const *edge) const
 
 vector<int> TreeNode::getPath() const
 {
-    vector<int> path;
+    std::deque<int> path;
     
     TreeNode const *m = this;
     TreeNode const *n = parent;
@@ -144,8 +145,9 @@ vector<int> TreeNode::getPath() const
         m = n;
         n = n->getParent();
     }
+    std::vector<int> result(path.begin(), path.end());
     
-    return path;
+    return result;
 }
 
 bool TreeNode::superTreeOf(TreeNode const *otherNode) const

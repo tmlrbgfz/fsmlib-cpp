@@ -59,6 +59,7 @@ public:
 	std::unique_ptr<OutputTree> clone() const;
 
     InputTrace getInputTrace() const;
+	std::vector<OutputTrace> getOutputTraces() const;
 
 	/**
 	 * Check whether this OutputTree instance is a superset of the output traces

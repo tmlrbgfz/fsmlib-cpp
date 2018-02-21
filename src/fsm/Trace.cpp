@@ -49,8 +49,16 @@ bool operator==(Trace const & trace1, Trace const & trace2) {
 	return trace1.get() == trace2.get();
 }
 
+bool operator!=(Trace const &trace1, Trace const &trace2) {
+	return not(trace1 == trace2);
+}
+
 bool operator==(Trace const & trace1, std::vector<int> const & trace2) {
 	return trace1.get() == trace2;
+}
+
+bool operator!=(Trace const &trace1, std::vector<int> const &trace2) {
+	return not(trace1 == trace2);
 }
 
 std::ostream & operator<<(std::ostream & out, const Trace & trace)

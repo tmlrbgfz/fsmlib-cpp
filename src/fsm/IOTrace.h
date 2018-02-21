@@ -58,6 +58,16 @@ public:
      * Check equality of IOTraces
      */
     friend bool operator==(IOTrace const& trc1, IOTrace const& trc2);
+
+	bool operator<(IOTrace const &other) const {
+		if(inputTrace < other.inputTrace) {
+			return true;
+		}
+		if(other.inputTrace < inputTrace) {
+			return false;
+		}
+		return outputTrace < other.outputTrace;
+	}
     
 };
 #endif //FSM_FSM_IOTRACE_H_

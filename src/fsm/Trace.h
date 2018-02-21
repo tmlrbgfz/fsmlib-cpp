@@ -89,6 +89,8 @@ public:
 	*/
 	friend bool operator==(Trace const & trace1, Trace const & trace2);
 
+	friend bool operator!=(Trace const &trace1, Trace const &trace2);
+
     /**
      * Check whether or not the list of integers in trace1
      * is the same as the list of integers specified by trace2
@@ -97,6 +99,8 @@ public:
      * @return True if they are the same, false otherwise
      */
     friend bool operator==(Trace const & trace1, std::vector<int> const & trace2);
+	
+	friend bool operator!=(Trace const &trace1, std::vector<int> const &trace2);
 
 	/**
 	Output the Trace to a standard output stream
@@ -105,5 +109,9 @@ public:
 	@return The standard output stream used, to allow user to cascade <<
 	*/
 	friend std::ostream & operator<<(std::ostream & out, const Trace & trace);
+
+	bool operator<(Trace const &other) const {
+		return trace < other.trace;
+	}
 };
 #endif //FSM_FSM_TRACE_H_

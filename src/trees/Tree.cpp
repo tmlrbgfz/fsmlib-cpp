@@ -113,22 +113,26 @@ TreeNode* Tree::getSubTree( std::vector<int> const *alpha) const {
 
 IOListContainer Tree::getIOLists()
 {
+    auto leaves = getLeaves();
     IOListContainer::IOListBaseType ioll;
+    ioll.reserve(leaves.size());
 
-	for (TreeNode *n : getLeaves())
+	for (TreeNode *n : leaves)
 	{
-		ioll.push_back(n->getPath());
+		ioll.emplace_back(std::move(n->getPath()));
 	}
 
 	return IOListContainer(ioll, presentationLayer->clone());
 }
 
 IOListContainer Tree::getIOLists() const {
+    auto leaves = getLeaves();
     IOListContainer::IOListBaseType ioll;
+    ioll.reserve(leaves.size());
 
-	for (TreeNode *n : getLeaves())
+	for (TreeNode *n : leaves)
 	{
-		ioll.push_back(n->getPath());
+		ioll.emplace_back(std::move(n->getPath()));
 	}
 
 	return IOListContainer(ioll, presentationLayer->clone());

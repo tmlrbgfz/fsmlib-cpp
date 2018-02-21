@@ -184,7 +184,7 @@ std::pair<OutputTree, std::unordered_map<TreeNode*, FsmNode*>> FsmNode::apply(co
             }
         }
     }
-    return std::make_pair(ot, t2f);
+    return std::make_pair(std::move(ot), std::move(t2f));
 }
 
 std::unordered_set<FsmNode*> FsmNode::after(std::vector<int> const &itrc)
