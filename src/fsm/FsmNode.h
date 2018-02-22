@@ -47,7 +47,6 @@ private:
      */
     std::vector<std::string> satisfies;
 	std::pair<OutputTree, std::unordered_map<TreeNode*, FsmNode*>> apply(const InputTrace& itrc) const;
-	void addDerivedFrom() {}
 	void addDerivedFrom(FsmNode *singleNode) {
 		derivedFrom.push_back(singleNode);
 	}
