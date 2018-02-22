@@ -20,6 +20,7 @@
 
 class FsmTransition;
 class FsmPresentationLayer;
+class Fsm;
 class OutputTree;
 class Tree;
 class TreeNode;
@@ -41,7 +42,7 @@ private:
 	FsmPresentationLayer const *presentationLayer;
 	std::pair<FsmNode*, FsmNode*> derivedFromPair;
     
-    bool isInitialNode;
+    Fsm *fsm;
     
     /**
      *  List of requirements satisfied by the node
@@ -143,8 +144,13 @@ public:
     /** 
      *  Mark that this noe is the initial node
      */
-    void markAsInitial() { isInitialNode = true; }
-    bool isInitial() const { return isInitialNode; }
+    void markAsInitial();
+    bool isInitial() const;
+
+	void setFsm(Fsm *fsm);
+	Fsm *getFsm() const {
+		return this->fsm;
+	}
     
     /**
      * Accept an FsmVisitor, if this node has not been visited already.

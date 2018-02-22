@@ -226,6 +226,7 @@ public:
      */
     void dumpFsm(std::ofstream & outputFile) const;
     FsmNode *getInitialState() const;
+    void setInitialState(FsmNode *node);
     
     /**
      This is the getter for the name of the FSM

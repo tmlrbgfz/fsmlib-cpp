@@ -290,6 +290,7 @@ void Dfsm::createDfsmTransitionGraph(const string& fname) {
                                             presentationLayer->getStateId(nodeId,""),
                                             presentationLayer.get());
             nodes[nodeId].reset(currentParsedNode);
+            currentParsedNode->setFsm(this);
         }
         
         // Skip the first column
@@ -342,6 +343,7 @@ void Dfsm::createDfsmTransitionGraph(const string& fname) {
                                               tgtStateName,
                                               presentationLayer.get());
                         nodes[tgtStateId.value()].reset(tgtNode);
+                        tgtNode->setFsm(this);
                     }
                     // Get the output associated with the current state
                     // and input
@@ -416,6 +418,7 @@ void Dfsm::createAtRandom()
     for (unsigned int i = 0; i < nodes.size(); ++ i)
     {
         nodes [i].reset(new FsmNode(i, presentationLayer.get()));
+        nodes[i]->setFsm(this);
     }
     
     for (unsigned int i = 0; i < nodes.size(); ++ i)
@@ -624,6 +627,7 @@ Fsm()
     // Create all FSM states
     for ( size_t s = 0; s < state2String.size(); s++ ) {
         nodes.emplace_back(new FsmNode((int)s,state2String[s],presentationLayer.get()));
+        nodes.back()->setFsm(this);
         name2node[state2String[s]] = nodes.back().get();
     }
     
@@ -849,6 +853,7 @@ Fsm()
     // Create all FSM states
     for ( size_t s = 0; s < state2String.size(); s++ ) {
         nodes.emplace_back(new FsmNode((int)s,state2String[s],presentationLayer.get()));
+        nodes.back()->setFsm(this);
         name2node[state2String[s]] = nodes.back().get();
     }
     

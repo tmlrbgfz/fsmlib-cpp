@@ -18,6 +18,7 @@
 #include "trees/TreeNode.h"
 #include "trees/IOListContainer.h"
 #include "interface/FsmPresentationLayer.h"
+#include "fsm/Fsm.h"
 
 using namespace std;
 
@@ -27,7 +28,7 @@ visited(false),
 color(white),
 presentationLayer(presentationLayer),
 derivedFromPair(nullptr, nullptr),
-isInitialNode(false)
+fsm(nullptr)
 {
     
 }
@@ -37,6 +38,24 @@ FsmNode::FsmNode(const int id, const string & name,
 : FsmNode(id, presentationLayer)
 {
     this->name = name;
+}
+
+void FsmNode::setFsm(Fsm *fsm) {
+    auto const &fsmNodes = fsm->getNodes();
+    if(fsmNodes.end() != std::find_if(fsmNodes.begin(), fsmNodes.end(), [this](std::unique_ptr<FsmNode> const &ptr){
+        return ptr.get() == this;
+    })) {
+        this->fsm = fsm;
+    }
+}
+
+void FsmNode::markAsInitial() {
+    //Expects(this->fsm != nullptr, "Cannot set FSM node to initial node without FSM association.");
+    this->fsm->setInitialState(this);
+}
+
+bool FsmNode::isInitial() const {
+    return this->fsm->getInitialState() == this;
 }
 
 void FsmNode::addTransition(std::unique_ptr<FsmTransition> &&transition)

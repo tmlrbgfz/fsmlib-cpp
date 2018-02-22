@@ -91,25 +91,28 @@ void Fsm::parseLine(const string & line)
     if (currentParsedNode == nullptr)
     {
         currentParsedNode = new FsmNode(source, name, presentationLayer.get());
-        nodes[source] = std::unique_ptr<FsmNode>(currentParsedNode);
+        nodes.at(source) = std::unique_ptr<FsmNode>(currentParsedNode);
+        nodes.at(source)->setFsm(this);
     }
     else if (currentParsedNode->getId() != source && nodes[source] == nullptr)
     {
         currentParsedNode = new FsmNode(source, name, presentationLayer.get());
-        nodes[source] = std::unique_ptr<FsmNode>(currentParsedNode);
+        nodes.at(source) = std::unique_ptr<FsmNode>(currentParsedNode);
+        nodes.at(source)->setFsm(this);
     }
     else if (currentParsedNode->getId() != source)
     {
-        currentParsedNode = nodes[source].get();
+        currentParsedNode = nodes.at(source).get();
     }
     
-    if (nodes[target] == nullptr)
+    if (nodes.at(target) == nullptr)
     {
-        nodes[target] = std::unique_ptr<FsmNode>(new FsmNode(target, name, presentationLayer.get()));
+        nodes.at(target) = std::unique_ptr<FsmNode>(new FsmNode(target, name, presentationLayer.get()));
+        nodes.at(target)->setFsm(this);
     }
     
     FsmLabel *lbl = new FsmLabel(input, output, presentationLayer.get());
-    std::unique_ptr<FsmTransition> transition { new FsmTransition(currentParsedNode, nodes[target].get(), std::unique_ptr<FsmLabel>(lbl)) };
+    std::unique_ptr<FsmTransition> transition { new FsmTransition(currentParsedNode, nodes.at(target).get(), std::unique_ptr<FsmLabel>(lbl)) };
     currentParsedNode->addTransition(std::move(transition));
 }
 
@@ -228,6 +231,7 @@ Fsm::Fsm(const Fsm& other) {
     
     for ( int n = 0; n <= maxState; n++ ) {
         nodes.emplace_back(new FsmNode(n,name,presentationLayer.get()));
+        nodes.back()->setFsm(this);
     }
     
     // Now add transitions that correspond exactly to the transitions in
@@ -328,6 +332,7 @@ presentationLayer(std::move(presentationLayer))
     for ( auto &n : nodes ) {
         n->setColor(FsmNode::white);
         n->setUnvisited();
+        n->setFsm(this);
     }
     
     nodes[initStateIdx]->markAsInitial();
@@ -360,6 +365,15 @@ void Fsm::dumpFsm(ofstream & outputFile) const
 FsmNode * Fsm::getInitialState() const
 {
     return nodes.size() > 0 ? nodes.at(initStateIdx).get() : nullptr;
+}
+
+void Fsm::setInitialState(FsmNode *node) {
+    auto found = std::find_if(nodes.begin(), nodes.end(), [node](std::unique_ptr<FsmNode> const &elem){
+        return elem.get() == node;
+    });
+    if(found != nodes.end()) {
+        initStateIdx = found - nodes.begin();
+    }
 }
 
 string Fsm::getName() const
