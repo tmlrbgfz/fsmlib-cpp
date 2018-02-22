@@ -272,7 +272,7 @@ Fsm OFSMTable::toFsm(const string & name) const
      */
 	for (int i = 0; i <= maxClassId(); ++ i)
 	{
-		nodeLst.emplace_back(new FsmNode(i, minState2String[i], minPl.get()));
+		nodeLst.emplace_back(new FsmNode(i, minState2String[i]));
 	}
 
 	/* For each FSM state, add outgoing transitions */

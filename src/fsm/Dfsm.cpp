@@ -287,8 +287,7 @@ void Dfsm::createDfsmTransitionGraph(const string& fname) {
         currentParsedNode = nodes[nodeId].get();
         if ( currentParsedNode == nullptr ) {
             currentParsedNode = new FsmNode(nodeId,
-                                            presentationLayer->getStateId(nodeId,""),
-                                            presentationLayer.get());
+                                            presentationLayer->getStateId(nodeId,""));
             nodes[nodeId].reset(currentParsedNode);
             currentParsedNode->setFsm(this);
         }
@@ -340,8 +339,7 @@ void Dfsm::createDfsmTransitionGraph(const string& fname) {
                     tgtNode = nodes[tgtStateId.value()].get();
                     if ( tgtNode == nullptr ) {
                         tgtNode = new FsmNode(tgtStateId.value(),
-                                              tgtStateName,
-                                              presentationLayer.get());
+                                              tgtStateName);
                         nodes[tgtStateId.value()].reset(tgtNode);
                         tgtNode->setFsm(this);
                     }
@@ -417,7 +415,7 @@ void Dfsm::createAtRandom()
     
     for (unsigned int i = 0; i < nodes.size(); ++ i)
     {
-        nodes [i].reset(new FsmNode(i, presentationLayer.get()));
+        nodes [i].reset(new FsmNode(i));
         nodes[i]->setFsm(this);
     }
     
@@ -626,7 +624,7 @@ Fsm()
     
     // Create all FSM states
     for ( size_t s = 0; s < state2String.size(); s++ ) {
-        nodes.emplace_back(new FsmNode((int)s,state2String[s],presentationLayer.get()));
+        nodes.emplace_back(new FsmNode((int)s,state2String[s]));
         nodes.back()->setFsm(this);
         name2node[state2String[s]] = nodes.back().get();
     }
@@ -852,7 +850,7 @@ Fsm()
     
     // Create all FSM states
     for ( size_t s = 0; s < state2String.size(); s++ ) {
-        nodes.emplace_back(new FsmNode((int)s,state2String[s],presentationLayer.get()));
+        nodes.emplace_back(new FsmNode((int)s,state2String[s]));
         nodes.back()->setFsm(this);
         name2node[state2String[s]] = nodes.back().get();
     }

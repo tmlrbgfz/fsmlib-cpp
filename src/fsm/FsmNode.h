@@ -19,7 +19,6 @@
 #include "fsm/SegmentedTrace.h"
 
 class FsmTransition;
-class FsmPresentationLayer;
 class Fsm;
 class OutputTree;
 class Tree;
@@ -39,7 +38,6 @@ private:
 	std::string name;
 	bool visited;
 	int color;
-	FsmPresentationLayer const *presentationLayer;
 	std::pair<FsmNode*, FsmNode*> derivedFromPair;
     
     Fsm *fsm;
@@ -54,11 +52,9 @@ public:
 	const static int white = 0;
 	const static int grey = 1;
 	const static int black = 2;
+	FsmNode(const int id);
 	FsmNode(const int id,
-            FsmPresentationLayer const *presentationLayer);
-	FsmNode(const int id,
-            const std::string & name,
-            FsmPresentationLayer const *presentationLayer);
+            const std::string & name);
 	
 	FsmNode(FsmNode const &other) = default;
 	FsmNode(FsmNode &&other) = default;

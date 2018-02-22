@@ -25,7 +25,7 @@ using namespace std;
 std::unique_ptr<FsmNode> Fsm::newNode(const int id, std::pair<FsmNode*, FsmNode*> const &p,
                                       FsmPresentationLayer *pl) const
 {
-    FsmNode *n { new FsmNode(id, pl->getStateId(id,""), pl) };
+    FsmNode *n { new FsmNode(id, pl->getStateId(id,"")) };
     n->setPair(p);
     return std::unique_ptr<FsmNode>(n);
 }
@@ -90,13 +90,13 @@ void Fsm::parseLine(const string & line)
     
     if (currentParsedNode == nullptr)
     {
-        currentParsedNode = new FsmNode(source, name, presentationLayer.get());
+        currentParsedNode = new FsmNode(source, name);
         nodes.at(source) = std::unique_ptr<FsmNode>(currentParsedNode);
         nodes.at(source)->setFsm(this);
     }
     else if (currentParsedNode->getId() != source && nodes[source] == nullptr)
     {
-        currentParsedNode = new FsmNode(source, name, presentationLayer.get());
+        currentParsedNode = new FsmNode(source, name);
         nodes.at(source) = std::unique_ptr<FsmNode>(currentParsedNode);
         nodes.at(source)->setFsm(this);
     }
@@ -107,7 +107,7 @@ void Fsm::parseLine(const string & line)
     
     if (nodes.at(target) == nullptr)
     {
-        nodes.at(target) = std::unique_ptr<FsmNode>(new FsmNode(target, name, presentationLayer.get()));
+        nodes.at(target) = std::unique_ptr<FsmNode>(new FsmNode(target, name));
         nodes.at(target)->setFsm(this);
     }
     
@@ -230,7 +230,7 @@ Fsm::Fsm(const Fsm& other) {
     presentationLayer = other.presentationLayer->clone();
     
     for ( int n = 0; n <= maxState; n++ ) {
-        nodes.emplace_back(new FsmNode(n,name,presentationLayer.get()));
+        nodes.emplace_back(new FsmNode(n,name));
         nodes.back()->setFsm(this);
     }
     
@@ -670,7 +670,7 @@ Fsm Fsm::transformToObservableFSM() const
     // The initial state of the new FSM is labelled with
     // the set containing just the initial state of the old FSM
     string nodeName = labelString(theNodeLabel);
-    FsmNode *q0 = new FsmNode(id++, nodeName, obsPl.get());
+    FsmNode *q0 = new FsmNode(id++, nodeName);
     nodeLst.push_back(q0);
     bfsLst.push_back(q0);
     node2NodeLabel[q0] = theNodeLabel;
@@ -750,7 +750,7 @@ Fsm Fsm::transformToObservableFSM() const
                         // We need to create a new target node, to be reached
                         // from q under lbl
                         nodeName = labelString(theNodeLabel);
-                        tgtNode = new FsmNode(id++, nodeName, obsPl.get());
+                        tgtNode = new FsmNode(id++, nodeName);
                         nodeLst.push_back(tgtNode);
                         bfsLst.push_back(tgtNode);
                         node2NodeLabel[tgtNode] = theNodeLabel;
@@ -1366,7 +1366,7 @@ Fsm::createRandomFsm(const string & fsmName,
     // used to mark unreachable states which have to be made reachable
     std::vector<std::unique_ptr<FsmNode> > lst;
     for ( int n = 0; n <= maxState; n++ ) {
-        lst.emplace_back(new FsmNode(n,fsmName,pl.get()));
+        lst.emplace_back(new FsmNode(n,fsmName));
     }
     
     // At index 0 of the vector, the initial state is store, and
@@ -1461,7 +1461,7 @@ std::unique_ptr<Fsm> Fsm::createMutant(const std::string & fsmName,
     // Create new nodes for the mutant.
     std::vector<std::unique_ptr<FsmNode> > lst;
     for ( int n = 0; n <= maxState; n++ ) {
-        lst.emplace_back(new FsmNode(n,fsmName,newPresentationLayer.get()));
+        lst.emplace_back(new FsmNode(n,fsmName));
     }
     
     // Now add transitions that correspond exactly to the transitions in

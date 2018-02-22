@@ -73,8 +73,7 @@ protected:
     std::vector<std::shared_ptr<OFSMTable>> ofsmTableLst;
     std::vector<std::unique_ptr<Tree>> stateIdentificationSets;
     std::unique_ptr<FsmPresentationLayer> presentationLayer;
-    std::unique_ptr<FsmNode> newNode(const int id, std::pair<FsmNode*, FsmNode*> const &p,
-                                     FsmPresentationLayer *pl) const;
+    std::unique_ptr<FsmNode> newNode(const int id, std::pair<FsmNode*, FsmNode*> const &p, FsmPresentationLayer *pl) const;
     bool contains(std::deque<std::pair<FsmNode*, FsmNode*>> const &lst, std::pair<FsmNode*, FsmNode*> const &p) const;
     bool contains(std::vector<FsmNode*> const &lst, FsmNode const *n) const;
     FsmNode * findp(std::vector<FsmNode*> const &lst, std::pair<FsmNode*, FsmNode*> const &p) const;

@@ -17,25 +17,22 @@
 #include "trees/Tree.h"
 #include "trees/TreeNode.h"
 #include "trees/IOListContainer.h"
-#include "interface/FsmPresentationLayer.h"
 #include "fsm/Fsm.h"
 
 using namespace std;
 
-FsmNode::FsmNode(const int id, FsmPresentationLayer const *presentationLayer)
+FsmNode::FsmNode(const int id)
 : id(id),
 visited(false),
 color(white),
-presentationLayer(presentationLayer),
 derivedFromPair(nullptr, nullptr),
 fsm(nullptr)
 {
     
 }
 
-FsmNode::FsmNode(const int id, const string & name,
-                 FsmPresentationLayer const *presentationLayer)
-: FsmNode(id, presentationLayer)
+FsmNode::FsmNode(const int id, const string & name)
+: FsmNode(id)
 {
     this->name = name;
 }
@@ -90,7 +87,7 @@ int FsmNode::getId() const
 
 std::string FsmNode::getName() const
 {
-    return presentationLayer->getStateId(id, name);
+    return fsm->getPresentationLayer()->getStateId(id, name);
 }
 
 bool FsmNode::hasBeenVisited() const
@@ -129,13 +126,13 @@ std::pair<FsmNode*, FsmNode*> FsmNode::getPair() const
 
 FsmNode* FsmNode::apply(const int e, OutputTrace & o) const
 {
-    InputTrace inputTrace(presentationLayer->clone());
+    InputTrace inputTrace(fsm->getPresentationLayer()->clone());
     inputTrace.add(e);
     auto applyResult = apply(inputTrace);
     auto leaves = applyResult.first.getLeaves();
     auto treeNode = leaves.front();
     auto path = treeNode->getPath();
-    OutputTrace trace(path, presentationLayer->clone());
+    OutputTrace trace(path, fsm->getPresentationLayer()->clone());
     o = std::move(trace);
     return applyResult.second[treeNode];
 }
@@ -158,7 +155,7 @@ std::pair<OutputTree, std::unordered_map<TreeNode*, FsmNode*>> FsmNode::apply(co
     deque<TreeNode*> tnl;
     unordered_map<TreeNode*, FsmNode*> t2f;
     
-    OutputTree ot = OutputTree(itrc, presentationLayer->clone());
+    OutputTree ot = OutputTree(itrc, fsm->getPresentationLayer()->clone());
     TreeNode *root = ot.getRoot();
     
     //Cannot use `this` here as it is const.
@@ -293,7 +290,7 @@ shared_ptr<DFSMTableRow> FsmNode::getDFSMTableRow(const int maxInput) const
 
 bool FsmNode::distinguished(FsmNode const *otherNode, const vector<int>& iLst) const
 {
-    InputTrace itr = InputTrace(iLst, presentationLayer->clone());
+    InputTrace itr = InputTrace(iLst, fsm->getPresentationLayer()->clone());
     OutputTree ot1 = apply(itr).first;
     OutputTree ot2 = otherNode->apply(itr).first;
     
@@ -309,7 +306,7 @@ std::unique_ptr<InputTrace> FsmNode::distinguished(FsmNode const *otherNode, Tre
     {
         if (distinguished(otherNode, iLst))
         {
-            return std::unique_ptr<InputTrace>(new InputTrace(iLst, presentationLayer->clone()));
+            return std::unique_ptr<InputTrace>(new InputTrace(iLst, fsm->getPresentationLayer()->clone()));
         }
     }
     return {};
@@ -337,7 +334,7 @@ InputTrace FsmNode::calcDistinguishingTrace(FsmNode *otherNode,
     FsmNode *qi = this;
     FsmNode *qj = otherNode;
     
-    InputTrace itrc = InputTrace(presentationLayer->clone());
+    InputTrace itrc = InputTrace(fsm->getPresentationLayer()->clone());
     
     for (int k = 1; l - k > 0; ++ k)
     {
@@ -375,8 +372,8 @@ InputTrace FsmNode::calcDistinguishingTrace(FsmNode *otherNode,
     bool foundLast = false;
     for (int x = 0; x <= maxInput; ++ x) {
         
-        OutputTrace oti = OutputTrace(presentationLayer->clone());
-        OutputTrace otj = OutputTrace(presentationLayer->clone());
+        OutputTrace oti = OutputTrace(fsm->getPresentationLayer()->clone());
+        OutputTrace otj = OutputTrace(fsm->getPresentationLayer()->clone());
         qi->apply(x, oti);
         qj->apply(x, otj);
         if (oti.get().front() != otj.get().front())
@@ -399,7 +396,7 @@ InputTrace FsmNode::calcDistinguishingTrace(FsmNode const *otherNode,
                                             const int maxInput,
                                             const int maxOutput) const
 {
-    InputTrace itrc = InputTrace(presentationLayer->clone());
+    InputTrace itrc = InputTrace(fsm->getPresentationLayer()->clone());
     int q1 = this->getId();
     int q2 = otherNode->getId();
     

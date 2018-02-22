@@ -203,7 +203,7 @@ Dfsm PkTable::toFsm(string name, const int maxOutput)
 	/*Create the FSM states, one for each class*/
 	for (int i = 0; i <= maxClassId(); ++i)
 	{
-		nodeLst.emplace_back(new FsmNode(i, "", minPl.get()));
+		nodeLst.emplace_back(new FsmNode(i, ""));
 	}
 
 	/*For each FSM state, add outgoing transitions*/
