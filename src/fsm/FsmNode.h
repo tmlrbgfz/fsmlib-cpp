@@ -85,6 +85,7 @@ public:
 	template<class ... Args>
 	void setDerivedFrom(FsmNode *first, Args ...args) {
 		derivedFrom.clear();
+		derivedFrom.reserve(sizeof...(args) + 1);
 		addDerivedFrom(first, args...);	
 	}
 	void setDerivedFrom(std::vector<FsmNode*> const &nodes) {
