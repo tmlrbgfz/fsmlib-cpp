@@ -38,7 +38,7 @@ private:
 	std::string name;
 	bool visited;
 	int color;
-	std::pair<FsmNode*, FsmNode*> derivedFromPair;
+	std::vector<FsmNode*> derivedFrom;
     
     Fsm *fsm;
     
@@ -47,6 +47,15 @@ private:
      */
     std::vector<std::string> satisfies;
 	std::pair<OutputTree, std::unordered_map<TreeNode*, FsmNode*>> apply(const InputTrace& itrc) const;
+	void addDerivedFrom() {}
+	void addDerivedFrom(FsmNode *singleNode) {
+		derivedFrom.push_back(singleNode);
+	}
+	template<class ... Args>
+	void addDerivedFrom(FsmNode *first, Args ... others) {
+		addDerivedFrom(first);
+		addDerivedFrom(others...);
+	}
     
 public:
 	const static int white = 0;
@@ -74,10 +83,18 @@ public:
 	bool hasBeenVisited() const;
 	void setVisited();
     void setUnvisited();
-	void setPair(FsmNode *l, FsmNode *r);
-	void setPair(std::pair<FsmNode*, FsmNode*> const &p);
-	bool isDerivedFrom(std::pair<FsmNode*, FsmNode*> const &p) const;
-	std::pair<FsmNode*, FsmNode*> getPair() const;
+	template<class ... Args>
+	void setDerivedFrom(FsmNode *first, Args ...args) {
+		derivedFrom.clear();
+		addDerivedFrom(first, args...);	
+	}
+	void setDerivedFrom(std::vector<FsmNode*> const &nodes) {
+		derivedFrom = nodes;
+	}
+	//Comparison will fail if the nodes are not exactly in the same order
+	bool isDerivedFrom(std::vector<FsmNode*> const &p) const;
+	bool isDerivedFrom_subset(std::vector<FsmNode*> const &p) const;
+	std::vector<FsmNode*> getDerivedFrom() const;
 	FsmNode * apply(const int e, OutputTrace & o) const;
 	OutputTree apply(const InputTrace & itrc, bool markAsVisited);
 

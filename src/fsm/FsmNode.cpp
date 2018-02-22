@@ -25,7 +25,6 @@ FsmNode::FsmNode(const int id)
 : id(id),
 visited(false),
 color(white),
-derivedFromPair(nullptr, nullptr),
 fsm(nullptr)
 {
     
@@ -104,24 +103,23 @@ void FsmNode::setUnvisited() {
     visited = false;
 }
 
-void FsmNode::setPair(FsmNode *l, FsmNode *r)
+bool FsmNode::isDerivedFrom(std::vector<FsmNode*> const &p) const
 {
-    derivedFromPair = std::pair<FsmNode*, FsmNode*>(l, r);
+    return derivedFrom == p;
 }
 
-void FsmNode::setPair(std::pair<FsmNode*, FsmNode*> const &p)
+bool FsmNode::isDerivedFrom_subset(std::vector<FsmNode*> const &p) const
 {
-    derivedFromPair = p;
+    auto copy1 = derivedFrom;
+    auto copy2 = p;
+    std::sort(copy1.begin(), copy1.end());
+    std::sort(copy2.begin(), copy2.end());
+    return std::includes(copy1.begin(), copy1.end(), copy2.begin(), copy2.end());
 }
 
-bool FsmNode::isDerivedFrom(std::pair<FsmNode*, FsmNode*> const &p) const
+std::vector<FsmNode*> FsmNode::getDerivedFrom() const
 {
-    return derivedFromPair == p;
-}
-
-std::pair<FsmNode*, FsmNode*> FsmNode::getPair() const
-{
-    return derivedFromPair;
+    return derivedFrom;
 }
 
 FsmNode* FsmNode::apply(const int e, OutputTrace & o) const

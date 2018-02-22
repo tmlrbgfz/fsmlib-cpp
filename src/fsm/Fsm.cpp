@@ -26,7 +26,7 @@ std::unique_ptr<FsmNode> Fsm::newNode(const int id, std::pair<FsmNode*, FsmNode*
                                       FsmPresentationLayer *pl) const
 {
     FsmNode *n { new FsmNode(id, pl->getStateId(id,"")) };
-    n->setPair(p);
+    n->setDerivedFrom(p.first, p.second);
     return std::unique_ptr<FsmNode>(n);
 }
 
@@ -37,14 +37,17 @@ bool Fsm::contains(deque<pair<FsmNode*, FsmNode*>> const &lst,
 
 bool Fsm::contains(vector<FsmNode*> const &lst, FsmNode const *n) const {
     return std::any_of(lst.begin(), lst.end(), [n](FsmNode const *node)->bool{
-        return node->isDerivedFrom(n->getPair());
+        return node->isDerivedFrom(n->getDerivedFrom());
     });
 }
 
 FsmNode * Fsm::findp(vector<FsmNode*> const &lst,
                                pair<FsmNode*, FsmNode*> const &p) const {
-    auto iter = std::find_if(lst.begin(), lst.end(), [&p](FsmNode const *node)->bool{
-        return node->isDerivedFrom(p);
+    std::vector<FsmNode*> vec;
+    vec.push_back(p.first);
+    vec.push_back(p.second);
+    auto iter = std::find_if(lst.begin(), lst.end(), [&vec](FsmNode const *node)->bool{
+        return node->isDerivedFrom(vec);
     });
     if(iter != lst.end()) {
         return *iter;
