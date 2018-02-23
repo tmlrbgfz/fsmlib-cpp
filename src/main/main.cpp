@@ -48,7 +48,7 @@ void test1() {
     << endl;
     
     std::unique_ptr<FsmPresentationLayer> pl { new FsmPresentationLayer() };
-    Dfsm d("../../../resources/TC-DFSM-0001.fsm",std::move(pl),"m1");
+    Dfsm d("../../resources/TC-DFSM-0001.fsm",std::move(pl),"m1");
     d.toDot("TC-DFSM-0001");
     
     vector<int> inp;
@@ -299,7 +299,7 @@ void test5() {
     FsmPresentationLayer *pl { new FsmPresentationLayer() };
     
     shared_ptr<Fsm> fsm =
-    make_shared<Fsm>("../../../resources/TC-FSM-0005.fsm",pl->clone(),"F");
+    make_shared<Fsm>("../../resources/TC-FSM-0005.fsm",pl->clone(),"F");
     fsm->toDot("TC-FSM-0005");
     
     vector< std::unordered_set<int> > v = fsm->getEquivalentInputs();
@@ -339,7 +339,7 @@ void test5() {
     
     
     // Check FSM without any equivalent inputs
-    fsm = make_shared<Fsm>("../../../resources/fsmGillA7.fsm",pl->clone(),"F");
+    fsm = make_shared<Fsm>("../../resources/fsmGillA7.fsm",pl->clone(),"F");
     fsm->toDot("fsmGillA7");
     v = fsm->getEquivalentInputs();
     
@@ -366,7 +366,7 @@ void test6() {
     cout << "TC-FSM-0006 Check correctness of FSM Print Visitor " << endl;
     
     FsmPresentationLayer *pl { new FsmPresentationLayer() };
-    Dfsm d("../../../resources/TC-DFSM-0001.fsm",pl->clone(),"m1");
+    Dfsm d("../../resources/TC-DFSM-0001.fsm",pl->clone(),"m1");
     
     FsmPrintVisitor v;
     
@@ -383,12 +383,12 @@ void test7() {
     
     //    cout << "TC-FSM-0007 Check correctness of FSM Simulation Visitor "
     //    << endl;
-    std::ifstream inputFile("../../../resources/garageIn.txt");
-    std::ifstream outputFile("../../../resources/garageOut.txt");
-    std::ifstream stateFile("../../../resources/garageState.txt");
+    std::ifstream inputFile("../../resources/garageIn.txt");
+    std::ifstream outputFile("../../resources/garageOut.txt");
+    std::ifstream stateFile("../../resources/garageState.txt");
     
     FsmPresentationLayer *pl { new FsmPresentationLayer(inputFile, outputFile, stateFile) };
-    Dfsm d("../../../resources/garage.fsm",pl->clone(),"GC");
+    Dfsm d("../../resources/garage.fsm",pl->clone(),"GC");
     d.toDot("GC");
     
     FsmSimVisitor v;
@@ -408,12 +408,12 @@ void test8() {
     
     //    cout << "TC-FSM-0008 Check correctness of FSM Oracle Visitor "
     //    << endl;
-    std::ifstream inputFile("../../../resources/garageIn.txt");
-    std::ifstream outputFile("../../../resources/garageOut.txt");
-    std::ifstream stateFile("../../../resources/garageState.txt");
+    std::ifstream inputFile("../../resources/garageIn.txt");
+    std::ifstream outputFile("../../resources/garageOut.txt");
+    std::ifstream stateFile("../../resources/garageState.txt");
     
     FsmPresentationLayer *pl { new FsmPresentationLayer(inputFile, outputFile, stateFile) };
-    Dfsm d("../../../resources/garage.fsm",pl->clone(),"GC");
+    Dfsm d("../../resources/garage.fsm",pl->clone(),"GC");
     d.toDot("GC");
     
     FsmOraVisitor v;
@@ -437,7 +437,7 @@ void test9() {
     Reader jReader;
     Value root;
     stringstream document;
-    ifstream inputFile("../../../resources/unreachable_gdc.fsm");
+    ifstream inputFile("../../resources/unreachable_gdc.fsm");
     document << inputFile.rdbuf();
     inputFile.close();
     
@@ -487,7 +487,7 @@ void test10() {
     Reader jReader;
     Value root;
     stringstream document;
-    ifstream inputFile("../../../resources/unreachable_gdc.fsm");
+    ifstream inputFile("../../resources/unreachable_gdc.fsm");
     document << inputFile.rdbuf();
     inputFile.close();
     
@@ -562,7 +562,7 @@ void gdc_test1() {
 
     
     shared_ptr<Dfsm> gdc =
-    make_shared<Dfsm>("../../../resources/garage-door-controller.csv","GDC");
+    make_shared<Dfsm>("../../resources/garage-door-controller.csv","GDC");
     
     FsmPresentationLayer *pl = gdc->getPresentationLayer();
     
@@ -587,7 +587,7 @@ void gdc_test1() {
     testSuite->save("testsuite.txt");
     
     assert("TC-GDC-0001",
-            0 == system("diff testsuite.txt ../../../resources/gdc-testsuite.txt"),
+            0 == system("diff testsuite.txt ../../resources/gdc-testsuite.txt"),
            "Expected GDC test suite and generated suite are identical");
     
     
