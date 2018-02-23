@@ -91,6 +91,10 @@ void TreeNode::remove(TreeNode const *node) {
         return edge->getTarget() == node;
     });
     children.erase(edgeToRemove);
+    auto indexIter = std::find_if(childIndex.begin(), childIndex.end(), [node](std::pair<TreeNode const*, TreeEdge const*> const &value){
+        return value.first == node;
+    });
+    childIndex.erase(indexIter);
 }
 
 void TreeNode::calcLeaves(std::vector<TreeNode*> &leaves) {
