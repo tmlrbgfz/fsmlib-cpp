@@ -4,6 +4,7 @@
  * Licensed under the EUPL V.1.1
  */
 #include "trees/OutputTree.h"
+#include "utils/stringutils.h"
 #include <fstream>
 
 using namespace std;
@@ -82,15 +83,13 @@ void OutputTree::store(std::ofstream& file)
 	IOListContainer::IOListBaseType lli = getIOLists().getIOLists();
 	for (vector<int> const &lst : lli)
 	{
-		for (unsigned int i = 0; i < lst.size(); ++ i)
-		{
-			if (i != 0)
-			{
-				file << std::string(".");
-			}
-
-			file << std::string("(") << inputTrace.get().at(i) << std::string(",") << lst.at(i) << std::string(")");
+		std::vector<std::string> ioPairsRendered;
+		ioPairsRendered.reserve(lst.size());
+		
+		for (unsigned int i = 0; i < lst.size(); ++ i) {
+			ioPairsRendered.emplace_back(std::string("(") + std::to_string(inputTrace.get().at(i)) + "," + std::to_string(lst.at(i)) + ")");
 		}
+		file << concatenate(ioPairsRendered.begin(), ioPairsRendered.end(), ".");
 	}
 }
 
@@ -110,14 +109,13 @@ ostream& operator<<(ostream& out, OutputTree const &ot)
 	IOListContainer::IOListBaseType lli = ot.getIOLists().getIOLists();
 	for (vector<int> const &lst : lli)
 	{
-		for (unsigned int i = 0; i < lst.size(); ++ i)
-		{
-            
-            if ( i > 0 ) out << ".";
-
-			out << "(" << ot.presentationLayer->getInId(ot.inputTrace.get().at(i)) << "/" << ot.presentationLayer->getOutId(lst.at(i)) << ")";
+		std::vector<std::string> ioPairsRendered;
+		ioPairsRendered.reserve(lst.size());
+		
+		for (unsigned int i = 0; i < lst.size(); ++ i) {
+			ioPairsRendered.emplace_back(std::string("(") + ot.presentationLayer->getInId(ot.inputTrace.get().at(i)) + "/" + ot.presentationLayer->getOutId(lst.at(i)) + ")");
 		}
-		out << endl;
+		out << concatenate(ioPairsRendered.begin(), ioPairsRendered.end(), ".") << std::endl;
 	}
 	return out;
 }
