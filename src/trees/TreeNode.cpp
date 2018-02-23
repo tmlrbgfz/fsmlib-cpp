@@ -4,6 +4,7 @@
  * Licensed under the EUPL V.1.1
  */
 #include "trees/TreeNode.h"
+#include "utils/prepostconditions.h"
 #include <deque>
 
 using namespace std;
@@ -19,11 +20,19 @@ TreeNode::TreeNode(TreeNode const &other) {
         children.emplace_back(child->clone());
         children.back()->getTarget()->setParent(this);
     }
+    updateChildIndex();
     parent = nullptr;
 }
 
 std::unique_ptr<TreeNode> TreeNode::clone() const {
     return std::unique_ptr<TreeNode>(new TreeNode(*this));
+}
+
+void TreeNode::updateChildIndex() {
+    childIndex.clear();
+    for(auto const &child : children) {
+        childIndex.emplace_back(std::pair<TreeNode const*, TreeEdge const*>(child->getTarget(), child.get()));
+    }
 }
 
 void TreeNode::setParent(TreeNode *pparent) {
@@ -77,11 +86,6 @@ std::vector<std::unique_ptr<TreeEdge>> const & TreeNode::getChildren() const
     return children;
 }
 
-std::vector<std::unique_ptr<TreeEdge>> & TreeNode::getChildren() 
-{
-    return children;
-}
-
 void TreeNode::remove(TreeNode const *node) {
     auto edgeToRemove = std::find_if(children.begin(), children.end(), [node](std::unique_ptr<TreeEdge> const &edge){
         return edge->getTarget() == node;
@@ -101,6 +105,7 @@ void TreeNode::calcLeaves(std::vector<TreeNode*> &leaves) {
 
 void TreeNode::add(std::unique_ptr<TreeEdge> &&edge) {
     edge->getTarget()->setParent(this);
+    childIndex.emplace_back(std::make_pair(edge->getTarget(), edge.get()));
     children.emplace_back(std::move(edge));
 }
 
@@ -109,15 +114,12 @@ bool TreeNode::isLeaf() const {
 }
 
 int TreeNode::getIO(TreeNode const *node) const {
-    auto edge = std::find_if(children.begin(), children.end(), [node](std::unique_ptr<TreeEdge> const &child){
-        return child->getTarget() == node;
+    auto edge = std::find_if(childIndex.begin(), childIndex.end(), 
+        [&node](std::pair<TreeNode const*, TreeEdge const*> const &child){
+            return child.first == node;
     });
-    if(edge != children.end()) {
-        return (*edge)->getIO();
-    } else {
-        //TODO: Better error handling (error message)
-        exit(EXIT_FAILURE);
-    }
+    Expects(edge != childIndex.end());
+    return (*edge).second->getIO();
 }
 
 TreeEdge * TreeNode::hasEdge(TreeEdge const *edge) const
@@ -269,9 +271,8 @@ void TreeNode::add(vector<int>::const_iterator lstIte, const vector<int>::const_
     /*No edge labelled with x exists for this node.
      Therefore one has to be created*/
     TreeNode *newNode = new TreeNode();
-    newNode->setParent(this);
-    TreeEdge *newEdge = new TreeEdge(x, std::unique_ptr<TreeNode>(newNode));
-    getChildren().emplace_back(newEdge);
+    std::unique_ptr<TreeEdge> newEdge { new TreeEdge(x, std::unique_ptr<TreeNode>(newNode)) };
+    add(std::move(newEdge));
     newNode->add(lstIte, end);
 }
 

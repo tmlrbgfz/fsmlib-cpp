@@ -24,6 +24,7 @@ protected:
 	A list containing the children of this node
 	*/
 	std::vector<std::unique_ptr<TreeEdge>> children;
+	mutable std::vector<std::pair<TreeNode const*,TreeEdge const*>> childIndex;
 
 	/**
 	Mark this node as deleted
@@ -32,6 +33,7 @@ protected:
 
 	//TODO
 	void add(std::vector<int>::const_iterator lstIte, const std::vector<int>::const_iterator end);
+	void updateChildIndex();
     
 public:
 	/**
@@ -86,7 +88,6 @@ public:
 	@return The children
 	*/
 	std::vector<std::unique_ptr<TreeEdge>> const & getChildren() const;
-	std::vector<std::unique_ptr<TreeEdge>> & getChildren();
 
 	/**
 	Remove a tree node from this node's children target
