@@ -121,5 +121,5 @@ ostream & operator<<(ostream & out, const SegmentedTrace& trc) {
 bool operator==(SegmentedTrace const & trace1, SegmentedTrace const & trace2) {
     auto t1 = trace1.getCopy();
     auto t2 = trace2.getCopy();
-    return t1 != t2;
+    return t1 == t2;
 }
