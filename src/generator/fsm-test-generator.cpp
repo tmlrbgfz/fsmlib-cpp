@@ -446,7 +446,7 @@ bool inPrefixRelation(vector<int> aPath, vector<int> bPath)
     return true;
 }
 
-shared_ptr<Tree> getPrefixRelationTreeWithoutTrace(const shared_ptr<Tree> & a, const shared_ptr<Tree> & b, const vector<int> & trc)
+unique_ptr<Tree> getPrefixRelationTreeWithoutTrace(const Tree* a, const Tree* b, const vector<int>& trc)
 {
     IOListContainer aIOlst = a->getIOLists();
     IOListContainer bIOlst = b->getIOLists();
@@ -454,7 +454,7 @@ shared_ptr<Tree> getPrefixRelationTreeWithoutTrace(const shared_ptr<Tree> & a, c
     IOListContainer::IOListBaseType aPrefixes = aIOlst.getIOLists();
     IOListContainer::IOListBaseType bPrefixes = bIOlst.getIOLists();
 
-    shared_ptr<Tree> tree = make_shared<Tree>(pl->clone());
+    unique_ptr<Tree> tree {new Tree(pl->clone())};
 
     if (aPrefixes.at(0).empty() && bPrefixes.at(0).empty())
     {
@@ -463,11 +463,11 @@ shared_ptr<Tree> getPrefixRelationTreeWithoutTrace(const shared_ptr<Tree> & a, c
 
     if (aPrefixes.at(0).empty())
     {
-        return b;
+        return b->clone();
     }
     if (bPrefixes.at(0).empty())
     {
-        return a;
+        return a->clone();
     }
 
 
@@ -632,8 +632,8 @@ static void safeHMethod(const shared_ptr<TestSuite> &testSuite) {
     cout << "REFMIN size = " << dfsmRefMin.size() << endl;
     cout << "ABSMIN size = " << dfsmAbstractionMin.size() << endl;
     
-    shared_ptr<FsmNode> s0 = dfsmRefMin.getInitialState();
-    shared_ptr<FsmPresentationLayer> pl = dfsmRefMin.getPresentationLayer();
+    FsmNode* s0 = dfsmRefMin.getInitialState();
+    FsmPresentationLayer* pl = dfsmRefMin.getPresentationLayer();
 
     shared_ptr<Tree> iTreeH = dfsmRefMin.getStateCover();
     shared_ptr<Tree> iTreeSH = dfsmRefMin.getStateCover();
@@ -641,17 +641,17 @@ static void safeHMethod(const shared_ptr<TestSuite> &testSuite) {
     // Let A be a set consisting of alpha.w, beta.w for any alpha != beta in V
     // and a distinguishing trace w. q0-after-alpha !~ q0-after-beta
     IOListContainer iolcV = iTreeH->getIOListsWithPrefixes();
-    shared_ptr<vector<vector<int>>> iolV = iolcV.getIOLists();
+    IOListContainer::IOListBaseType& iolV = iolcV.getIOLists();
     
     // Let B = V.(union_(i=1)^(m-n+1) Sigma_I)
-    shared_ptr<Tree> B = dfsmRefMin.getStateCover();
+    unique_ptr<Tree> B = dfsmRefMin.getStateCover();
     IOListContainer inputEnum = IOListContainer(dfsmRefMin.getMaxInput(),
                                                 1,
                                                 numAddStates + 1,
-                                                pl);
+                                                pl->clone());
     B->add(inputEnum);
-    iTreeH->unionTree(B);
-    iTreeSH->unionTree(B);
+    iTreeH->unionTree(B.get());
+    iTreeSH->unionTree(B.get());
 
     Traces2GammaMap tracePair2gamma;
     TC2TracesMap tc2traces;
@@ -659,24 +659,24 @@ static void safeHMethod(const shared_ptr<TestSuite> &testSuite) {
     vector<TracePair> tracesToCompare;
 
     // A
-    for (unsigned i = 0; i < iolV->size(); i++)
+    for (unsigned i = 0; i < iolV.size(); i++)
     {
-        shared_ptr<InputTrace> alpha = make_shared<InputTrace>(iolV->at(i), pl);
-        for (unsigned j = i + 1; j < iolV->size(); j++)
+        InputTrace* alpha = new InputTrace(iolV.at(i), pl->clone());
+        for (unsigned j = i + 1; j < iolV.size(); j++)
         {
-            shared_ptr<InputTrace> beta = make_shared<InputTrace>(iolV->at(j), pl);
+            InputTrace* beta = new InputTrace(iolV.at(j), pl->clone());
 
-            shared_ptr<Tree> alphaTree = iTreeH->getSubTree(alpha);
-            shared_ptr<Tree> betaTree = iTreeH->getSubTree(beta);
+            unique_ptr<Tree> alphaTree = iTreeH->getSubTree(alpha);
+            unique_ptr<Tree> betaTree = iTreeH->getSubTree(beta);
 
-            shared_ptr<Tree> prefixRelationTree = alphaTree->getPrefixRelationTree(betaTree);
+            unique_ptr<Tree> prefixRelationTree = alphaTree->getPrefixRelationTree(betaTree.get());
 
-            InputTrace gamma = dfsmRefMin.calcDistinguishingTrace(alpha, beta, prefixRelationTree);
+            InputTrace gamma = dfsmRefMin.calcDistinguishingTrace(alpha, beta, prefixRelationTree.get());
 
-            shared_ptr<InputTrace> iAlphaGamma = make_shared<InputTrace>(alpha->get(), pl);
+            shared_ptr<InputTrace> iAlphaGamma = make_shared<InputTrace>(alpha->get(), pl->clone());
             iAlphaGamma->append(gamma.get());
 
-            shared_ptr<InputTrace> iBetaGamma = make_shared<InputTrace>(beta->get(), pl);
+            shared_ptr<InputTrace> iBetaGamma = make_shared<InputTrace>(beta->get(), pl->clone());
             iBetaGamma->append(gamma.get());
 
             iTreeH->addToRoot(iAlphaGamma->get());
@@ -692,44 +692,44 @@ static void safeHMethod(const shared_ptr<TestSuite> &testSuite) {
 
 
     // B
-    shared_ptr<vector<vector<int>>> iolB = inputEnum.getIOLists();
-    shared_ptr<FsmNode> abs_s0 = dfsmAbstractionMin.getInitialState();
+    auto& iolB = inputEnum.getIOLists();
+    FsmNode* abs_s0 = dfsmAbstractionMin.getInitialState();
 
-    for (const auto &beta : *iolB)
+    for (const auto &beta : iolB)
     {
-        for (auto alpha : *iolV)
+        for (auto alpha : iolV)
         {
-            shared_ptr<InputTrace> iAlphaBeta = make_shared<InputTrace>(alpha, pl);
-            iAlphaBeta->append(beta);
+            InputTrace iAlphaBeta(alpha, pl->clone());
+            iAlphaBeta.append(beta);
 
-            for (auto o : *iolV)
+            for (auto o : iolV)
             {
-                shared_ptr<InputTrace> iOmega = make_shared<InputTrace>(o, pl);
+                InputTrace iOmega(o, pl->clone());
 
-                shared_ptr<FsmNode> s0AfterAlphaBeta = *s0->after(*iAlphaBeta).begin();
-                shared_ptr<FsmNode> s0AfterOmega = *s0->after(*iOmega).begin();
+                FsmNode* s0AfterAlphaBeta = *s0->after(iAlphaBeta).begin();
+                FsmNode* s0AfterOmega = *s0->after(iOmega).begin();
                 if (s0AfterAlphaBeta == s0AfterOmega) continue;
-                tracesToCompare.emplace_back(iAlphaBeta->get(),iOmega->get());
+                tracesToCompare.emplace_back(iAlphaBeta.get(),iOmega.get());
             }
         }
     }
 
     // C
-    for (const auto &v : *iolV)
+    for (const auto &v : iolV)
     {
-        for (const auto &g1 : *iolB)
+        for (const auto &g1 : iolB)
         {
-            shared_ptr<InputTrace> iVG1 = make_shared<InputTrace>(v, pl);
+            shared_ptr<InputTrace> iVG1 = make_shared<InputTrace>(v, pl->clone());
             iVG1->append(g1);
 
             for (unsigned i = 1; i < g1.size(); ++i)
             {
                 vector<int> g2(begin(g1), begin(g1) + i);
-                shared_ptr<InputTrace> iVG2 = make_shared<InputTrace>(v, pl);
+                shared_ptr<InputTrace> iVG2 = make_shared<InputTrace>(v, pl->clone());
                 iVG2->append(g2);
 
-                shared_ptr<FsmNode> s0AfterVG1 = *s0->after(*iVG1).begin();
-                shared_ptr<FsmNode> s0AfterVG2 = *s0->after(*iVG2).begin();
+                FsmNode* s0AfterVG1 = *s0->after(*iVG1).begin();
+                FsmNode* s0AfterVG2 = *s0->after(*iVG2).begin();
                 if (s0AfterVG1 == s0AfterVG2) continue;
                 tracesToCompare.emplace_back(iVG1->get(),iVG2->get());
             }
@@ -738,24 +738,25 @@ static void safeHMethod(const shared_ptr<TestSuite> &testSuite) {
 
     /* h method */
     for (TracePair tracePair : tracesToCompare)  {
-        shared_ptr<InputTrace> alpha = make_shared<InputTrace>(tracePair.first, pl);
-        shared_ptr<InputTrace> beta = make_shared<InputTrace>(tracePair.second, pl);
+        InputTrace* alpha = new InputTrace(tracePair.first, pl->clone());
+        InputTrace* beta = new InputTrace(tracePair.second, pl->clone());
 
-        shared_ptr<Tree> alphaTree = iTreeH->getSubTree(alpha);
-        shared_ptr<Tree> betaTree = iTreeH->getSubTree(beta);
-        shared_ptr<Tree> prefixRelationTree = alphaTree->getPrefixRelationTree(betaTree);
-        InputTrace gamma = dfsmRefMin.calcDistinguishingTrace(alpha, beta, prefixRelationTree);
+        unique_ptr<Tree> alphaTree = iTreeH->getSubTree(alpha);
+        unique_ptr<Tree> betaTree = iTreeH->getSubTree(beta);
+        unique_ptr<Tree> prefixRelationTree = alphaTree->getPrefixRelationTree(betaTree.get());
 
-        shared_ptr<InputTrace> iAlphaGamma = make_shared<InputTrace>(alpha->get(), pl);
+        InputTrace gamma = dfsmRefMin.calcDistinguishingTrace(alpha, beta, prefixRelationTree.get());
+
+        shared_ptr<InputTrace> iAlphaGamma = make_shared<InputTrace>(alpha->get(), pl->clone());
         iAlphaGamma->append(gamma.get());
-        shared_ptr<InputTrace> iBetaGamma = make_shared<InputTrace>(beta->get(), pl);
+        shared_ptr<InputTrace> iBetaGamma = make_shared<InputTrace>(beta->get(), pl->clone());
         iBetaGamma->append(gamma.get());
 
         iTreeH->addToRoot(iAlphaGamma->get());
         iTreeH->addToRoot(iBetaGamma->get());
 
-        shared_ptr<FsmNode> afterAlpha = *abs_s0->after(*alpha).begin();
-        shared_ptr<FsmNode> afterBeta = *abs_s0->after(*beta).begin();
+        FsmNode* afterAlpha = *abs_s0->after(*alpha).begin();
+        FsmNode* afterBeta = *abs_s0->after(*beta).begin();
         if (afterAlpha == afterBeta) continue;
 
         TC2TracePair tc2trace1(iAlphaGamma->get(), tracePair);
@@ -769,11 +770,11 @@ static void safeHMethod(const shared_ptr<TestSuite> &testSuite) {
 
     /* safety h */
     for (TracePair tracePair : tracesToCompare)  {
-        shared_ptr<InputTrace> alpha = make_shared<InputTrace>(tracePair.first, pl);
-        shared_ptr<InputTrace> beta = make_shared<InputTrace>(tracePair.second, pl);
+        shared_ptr<InputTrace> alpha = make_shared<InputTrace>(tracePair.first, pl->clone());
+        shared_ptr<InputTrace> beta = make_shared<InputTrace>(tracePair.second, pl->clone());
 
-        shared_ptr<FsmNode> afterAlpha = *abs_s0->after(*alpha).begin();
-        shared_ptr<FsmNode> afterBeta = *abs_s0->after(*beta).begin();
+        FsmNode* afterAlpha = *abs_s0->after(*alpha).begin();
+        FsmNode* afterBeta = *abs_s0->after(*beta).begin();
         if (afterAlpha == afterBeta) continue;
 
         // Each TracePair (alpha, beta) generates two test cases in h method.
@@ -810,8 +811,8 @@ static void safeHMethod(const shared_ptr<TestSuite> &testSuite) {
     /* test cases that should not be changed */
     vector< vector<int> > perfectTestCases;
     for (unsigned int i = 0; i < 3; i++) {
-    vector< vector<int> > tests = *iTreeSH->getIOLists().getIOLists();
-    for (vector<int> testCase : tests)
+    const auto tests = iTreeSH->getIOLists().getIOLists();
+    for (const vector<int>& testCase : tests)
     {
         if (find(begin(perfectTestCases), end(perfectTestCases), testCase) != end(perfectTestCases))
         {
@@ -827,12 +828,12 @@ static void safeHMethod(const shared_ptr<TestSuite> &testSuite) {
             TracePair tracePair = it->second;
             vector<int> gamma = tracePair2gamma[tracePair];
 
-            auto alpha = make_shared<InputTrace>(tracePair.first, pl);
-            auto beta =  make_shared<InputTrace>(tracePair.second, pl);
+            InputTrace* alpha = new InputTrace(tracePair.first, pl->clone());
+            InputTrace* beta = new InputTrace(tracePair.second, pl->clone());
 
-            shared_ptr<Tree> alphaTree = iTreeSH->getSubTree(make_shared<InputTrace>(alpha->get(),pl));
-            shared_ptr<Tree> betaTree = iTreeSH->getSubTree(make_shared<InputTrace>(beta->get(),pl));
-            shared_ptr<Tree> prefixRelationTree = getPrefixRelationTreeWithoutTrace(alphaTree, betaTree, gamma);
+            unique_ptr<Tree> alphaTree = iTreeSH->getSubTree(alpha);
+            unique_ptr<Tree> betaTree = iTreeSH->getSubTree(beta);
+            unique_ptr<Tree> prefixRelationTree = getPrefixRelationTreeWithoutTrace(alphaTree.get(), betaTree.get(), gamma);
 
             if (prefixRelationTree->size() == 1)
             {
@@ -841,7 +842,7 @@ static void safeHMethod(const shared_ptr<TestSuite> &testSuite) {
                 break;
             }
 
-            InputTrace newGamma = dfsmRefMin.calcDistinguishingTraceInTree(alpha, beta, prefixRelationTree);
+            InputTrace newGamma = dfsmRefMin.calcDistinguishingTraceInTree(alpha, beta, prefixRelationTree.get());
             if (newGamma.size() > 0)
             {
                 // store newGamma for this pair
@@ -870,23 +871,23 @@ static void safeHMethod(const shared_ptr<TestSuite> &testSuite) {
 
                 // delete this test case and its partner if possible
                 auto oldGamma = tracePair2gamma[tracePair];
-                auto iAlphaGammaOld = make_shared<InputTrace>(tracePair.first, pl);
+                auto iAlphaGammaOld = make_shared<InputTrace>(tracePair.first, pl->clone());
                 iAlphaGammaOld->append(oldGamma);
-                auto iBetaGammaOld = make_shared<InputTrace>(tracePair.first, pl);
+                auto iBetaGammaOld = make_shared<InputTrace>(tracePair.first, pl->clone());
                 iBetaGammaOld->append(oldGamma);
-                shared_ptr<TreeNode> afterAGOld = iTreeSH->getRoot()->after(iAlphaGammaOld->cbegin(), iAlphaGammaOld->cend());
+                TreeNode* afterAGOld = iTreeSH->getRoot()->after(iAlphaGammaOld->cbegin(), iAlphaGammaOld->cend());
                 if (afterAGOld && afterAGOld->isLeaf())
                     afterAGOld->deleteNode();
-                shared_ptr<TreeNode> afterBGOld = iTreeSH->getRoot()->after(iBetaGammaOld->cbegin(), iBetaGammaOld->cend());
+                TreeNode* afterBGOld = iTreeSH->getRoot()->after(iBetaGammaOld->cbegin(), iBetaGammaOld->cend());
                 if (afterBGOld && afterBGOld->isLeaf())
                     afterBGOld->deleteNode();
 
                 // insert new two new test cases
                 // actual insertion is done after iteration
                 auto newGamma = pair2NewGamma[tracePair];
-                auto iAlphaGamma = make_shared<InputTrace>(tracePair.first, pl);
+                auto iAlphaGamma = make_shared<InputTrace>(tracePair.first, pl->clone());
                 iAlphaGamma->append(newGamma);
-                auto iBetaGamma =  make_shared<InputTrace>(tracePair.second, pl);
+                auto iBetaGamma =  make_shared<InputTrace>(tracePair.second, pl->clone());
                 iBetaGamma->append(newGamma);
 
                 newTestCases.emplace_back(iAlphaGamma->get(), tracePair);
