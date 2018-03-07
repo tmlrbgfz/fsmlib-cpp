@@ -6,6 +6,7 @@
 #include "trees/TreeNode.h"
 #include "utils/prepostconditions.h"
 #include <deque>
+#include "utils/prepostconditions.h"
 
 using namespace std;
 
@@ -258,7 +259,7 @@ void TreeNode::add(vector<int>::const_iterator lstIte, const vector<int>::const_
     }
     
     /*Which input is represented by the list iterator?*/
-    int x = *lstIte++;
+    int x = *lstIte;
     
     for (auto &e : getChildren())
     {
@@ -267,7 +268,7 @@ void TreeNode::add(vector<int>::const_iterator lstIte, const vector<int>::const_
         {
             /*We do not need to extend the tree, but follow the existing edge*/
             TreeNode *nTgt = e->getTarget();
-            nTgt->add(lstIte, end);
+            nTgt->add(lstIte+1, end);
             return;
         }
     }
@@ -277,7 +278,7 @@ void TreeNode::add(vector<int>::const_iterator lstIte, const vector<int>::const_
     TreeNode *newNode = new TreeNode();
     std::unique_ptr<TreeEdge> newEdge { new TreeEdge(x, std::unique_ptr<TreeNode>(newNode)) };
     add(std::move(newEdge));
-    newNode->add(lstIte, end);
+    newNode->add(lstIte+1, end);
 }
 
 void TreeNode::add(IOListContainer tcl)
@@ -377,13 +378,13 @@ TreeNode *TreeNode::after(vector<int>::const_iterator lstIte, const vector<int>:
 {
     if (lstIte != end)
     {
-        int x = *lstIte++;
+        int x = *lstIte;
         
         for (auto &e : getChildren())
         {
             if (e->getIO() == x)
             {
-                return e->getTarget()->after(lstIte, end);
+                return e->getTarget()->after(lstIte+1, end);
             }
         }
         
