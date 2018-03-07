@@ -64,16 +64,12 @@ void TreeNode::deleteNode() {
     
     TreeNode const *c = this;
     TreeNode *t = parent;
-    
-    while (t != nullptr) {
+
+    if(t->getChildren().size() == 1) {
+        t->deleteNode();
+        return;
+    } else {
         t->remove(c);
-        if(t->getChildren().empty()) {
-            t->deleteNode();
-        } else {
-            break;
-        }
-        c = t;
-        t = t->getParent();
     }
 }
 
