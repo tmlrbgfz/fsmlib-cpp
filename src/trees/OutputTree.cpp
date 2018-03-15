@@ -65,6 +65,9 @@ bool OutputTree::contains(OutputTree const &ot) const {
 	}
 	std::sort(myOutputs.begin(), myOutputs.end());
 	std::sort(otherOutputs.begin(), otherOutputs.end());
+    //remove duplicates from otherOutputs so that the number of occurences of a
+    //value is always greater or equal in myOutputs
+    std::unique(otherOutputs.begin(), otherOutputs.end());
 	return std::includes(myOutputs.begin(), myOutputs.end(), otherOutputs.begin(), otherOutputs.end());
 }
 
